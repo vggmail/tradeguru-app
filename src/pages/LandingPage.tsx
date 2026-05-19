@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Zap, ArrowRight, Brain, Activity, BarChart2, Shield, Monitor, Eye, Star, Check } from 'lucide-react';
+import { Zap, ArrowRight, Brain, Activity, BarChart2, Shield, Monitor, Eye, Star, Check, Moon, Sun } from 'lucide-react';
+import { useThemeStore } from '../store/themeStore';
 
 const FEATURES = [
   { icon: Brain, title: 'Mental Check-In', color: '#2962ff', desc: 'Pre-session emotional state tracking: sleep, stress, revenge mindset, max risk. The ritual that changes everything.' },
@@ -25,6 +26,7 @@ const PLANS = [
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { isDark, toggleTheme } = useThemeStore();
   const [email, setEmail] = useState('');
   const [joined, setJoined] = useState(false);
 
@@ -46,6 +48,9 @@ export default function LandingPage() {
             <span className="hidden sm:inline-flex badge-blue ml-2">Beta</span>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={toggleTheme} className="btn-ghost p-2 text-tv-muted hover:text-tv-text">
+              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
             <button onClick={() => navigate('/login')} className="btn-ghost text-sm">
               Sign In
             </button>
@@ -130,7 +135,7 @@ export default function LandingPage() {
       {/* Features */}
       <section className="max-w-6xl mx-auto px-6 py-20">
         <div className="text-center mb-14">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-3">Six pillars competitors can't replicate</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-3 font-display">Six pillars competitors can't replicate</h2>
           <p className="text-tv-muted text-lg">Built for serious traders who want to understand themselves, not just their trades.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -143,6 +148,67 @@ export default function LandingPage() {
               <p className="text-tv-muted text-sm leading-relaxed">{f.desc}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Moat & Supported Portals */}
+      <section className="max-w-6xl mx-auto px-6 pb-20">
+        <div className="bg-gradient-to-br from-tv-surface to-tv-surface2 rounded-2xl border border-tv-border p-8 md:p-10 relative overflow-hidden shadow-xl">
+          {/* Decorative gradients */}
+          <div className="absolute -right-24 -bottom-24 w-80 h-80 bg-tv-blue/5 rounded-full blur-3xl pointer-events-none" />
+          
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+            <div className="lg:col-span-7 space-y-6">
+              <span className="badge-blue text-xs px-2.5 py-1 uppercase tracking-wider font-semibold">
+                🔌 Dynamic Browser Integration
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold text-tv-text leading-tight">
+                Our Chrome Extension is the ultimate <span className="gradient-text font-bold">behavioral firewall</span>
+              </h2>
+              <p className="text-tv-muted text-sm md:text-base leading-relaxed">
+                By injecting non-invasive, ultra-lightweight telemetry listeners into your active charting terminals, the extension captures subconscious focus flags that typical journals miss: compulsive asset checks, hyper-frequent refreshes, and late-night panic scans.
+              </p>
+              
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-tv-green/10 flex items-center justify-center text-tv-green text-xs font-bold">✓</div>
+                  <span className="text-sm font-semibold text-tv-text">Hops & Chart switching counts mapped automatically</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-tv-green/10 flex items-center justify-center text-tv-green text-xs font-bold">✓</div>
+                  <span className="text-sm font-semibold text-tv-text">Slides breathing-rule toasts directly on active charts if anxiety spikes</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-tv-green/10 flex items-center justify-center text-tv-green text-xs font-bold">✓</div>
+                  <span className="text-sm font-semibold text-tv-text">Complete sandbox safety with 0% extension context invalidated crash rates</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-5 bg-tv-bg/50 rounded-xl border border-tv-border p-6 space-y-4">
+              <div className="text-xs font-bold text-tv-muted uppercase tracking-widest mb-2">
+                🟢 Supported Terminals Currently Tracked:
+              </div>
+              
+              {[
+                { name: 'TradingView Charts', type: 'Global Analysis', desc: 'Symbol checks, hovers, and focus session timers.', url: 'tradingview.com' },
+                { name: 'Binance Exchange', type: 'Crypto Markets', desc: 'Impulsive chart refresh rates and volatility logs.', url: 'binance.com' },
+                { name: 'XM Member Area', type: 'Forex & CFD', desc: 'Symbol-info queries including XAU/USD (Gold).', url: 'my.xm.com' },
+                { name: 'Exness Terminal', type: 'Multi-Asset Web', desc: 'Document title mutations and location jumps.', url: 'exness-terminal.com' },
+              ].map(p => (
+                <div key={p.name} className="flex items-start gap-3 p-3 rounded-lg bg-tv-surface border border-tv-border/50 hover:border-tv-blue/30 transition-colors group">
+                  <div className="w-2 h-2 rounded-full bg-tv-blue mt-1.5 animate-pulse group-hover:scale-125 transition-transform" />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm text-tv-text">{p.name}</span>
+                      <span className="text-[10px] bg-tv-border px-1.5 py-0.5 rounded text-tv-muted font-mono">{p.url}</span>
+                    </div>
+                    <p className="text-xs text-tv-muted mt-0.5 leading-relaxed">{p.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 

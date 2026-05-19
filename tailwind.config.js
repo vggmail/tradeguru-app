@@ -1,24 +1,25 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
         tv: {
-          bg:       '#131722',
-          surface:  '#1e222d',
-          surface2: '#2a2e39',
-          border:   '#2a2e39',
-          hover:    '#363a45',
-          blue:     '#2962ff',
+          bg:       'rgb(var(--tv-bg) / <alpha-value>)',
+          surface:  'rgb(var(--tv-surface) / <alpha-value>)',
+          surface2: 'rgb(var(--tv-surface2) / <alpha-value>)',
+          border:   'rgb(var(--tv-border) / <alpha-value>)',
+          hover:    'rgb(var(--tv-hover) / <alpha-value>)',
+          blue:     'rgb(var(--tv-blue) / <alpha-value>)',
           'blue-hover': '#1e53e5',
-          green:    '#26a69a',
-          red:      '#ef5350',
-          yellow:   '#f7b500',
+          green:    'rgb(var(--tv-green) / <alpha-value>)',
+          red:      'rgb(var(--tv-red) / <alpha-value>)',
+          yellow:   'rgb(var(--tv-yellow) / <alpha-value>)',
           purple:   '#9c27b0',
           orange:   '#ff9800',
-          text:     '#d1d4dc',
-          muted:    '#787b86',
+          text:     'rgb(var(--tv-text) / <alpha-value>)',
+          muted:    'rgb(var(--tv-muted) / <alpha-value>)',
           subtle:   '#b2b5be',
         },
       },

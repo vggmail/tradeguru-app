@@ -1,9 +1,11 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Brain, ClipboardList, TrendingUp,
-  BarChart2, Settings, LogOut, Activity, Zap,
+  BarChart2, Settings, LogOut, Activity, Zap, Moon, Sun,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import { useThemeStore } from '../../store/themeStore';
+import { useAppStore } from '../../store/appStore';
 import { cn } from '../../lib/utils';
 
 const NAV = [
@@ -17,6 +19,8 @@ const NAV = [
 
 export default function Sidebar() {
   const { user, logout } = useAuthStore();
+  const { isDark, toggleTheme } = useThemeStore();
+  const { activeSession } = useAppStore();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -49,7 +53,13 @@ export default function Sidebar() {
             )
           }>
             <Icon className="w-4 h-4 flex-shrink-0" />
-            {label}
+            <span className="flex-1">{label}</span>
+            {label === 'Session Plan' && activeSession && (
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-tv-green opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-tv-green"></span>
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>
@@ -67,6 +77,11 @@ export default function Sidebar() {
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-tv-muted hover:bg-tv-red/10 hover:text-tv-red transition-all duration-150">
           <LogOut className="w-4 h-4" />
           Sign Out
+        </button>
+        <button onClick={toggleTheme}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-tv-muted hover:bg-tv-hover hover:text-tv-text transition-all duration-150">
+          {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          {isDark ? 'Light Mode' : 'Dark Mode'}
         </button>
         {/* User pill */}
         <div className="flex items-center gap-3 px-3 py-2.5 mt-2 bg-tv-surface2 rounded-lg">

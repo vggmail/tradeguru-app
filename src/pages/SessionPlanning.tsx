@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 const MARKETS = ['BTC/USDT','ETH/USDT','EUR/USD','GBP/USD','NIFTY50','GOLD','AAPL','TSLA'];
 
 export default function SessionPlanning() {
-  const { sessionPlans, addSessionPlan } = useAppStore();
+  const { sessionPlans, addSessionPlan, activeSession, startSession } = useAppStore();
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(!sessionPlans.length);
   const [markets, setMarkets] = useState<string[]>([]);
@@ -122,7 +122,15 @@ export default function SessionPlanning() {
         {sessionPlans.map(p=>(
           <div key={p.id} className="card hover:border-tv-blue/30 transition-colors">
             <div className="flex items-start justify-between mb-3">
-              <div className="font-semibold text-tv-text">{p.date}</div>
+              <div className="font-semibold text-tv-text flex items-center gap-2">
+                {p.date}
+                {activeSession?.planId === p.id && (
+                  <span className="flex h-2.5 w-2.5 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-tv-green opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-tv-green"></span>
+                  </span>
+                )}
+              </div>
               <div className="flex gap-2 flex-wrap">
                 {p.markets.map(m=><span key={m} className="badge-blue">{m}</span>)}
               </div>
@@ -132,12 +140,30 @@ export default function SessionPlanning() {
               <span>Max Loss: <strong className="text-tv-red">{p.maxLoss}%</strong></span>
               <span>Max Trades: <strong className="text-tv-text">{p.maxTrades}</strong></span>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {p.rules.map((r,i)=>(
-                <span key={i} className="inline-flex items-center gap-1 text-xs text-tv-text bg-tv-surface2 px-2 py-1 rounded-lg border border-tv-border">
-                  <Check className="w-3 h-3 text-tv-green"/>{r}
-                </span>
-              ))}
+            <div className="flex items-center justify-between border-t border-tv-border/40 pt-3 mt-3">
+              <div className="flex flex-wrap gap-1.5">
+                {p.rules.map((r,i)=>(
+                  <span key={i} className="inline-flex items-center gap-1 text-xs text-tv-text bg-tv-surface2 px-2 py-1 rounded-lg border border-tv-border">
+                    <Check className="w-3 h-3 text-tv-green"/>{r}
+                  </span>
+                ))}
+              </div>
+              
+              {/* Session Controls */}
+              {activeSession?.planId === p.id ? (
+                <button type="button" onClick={() => navigate('/app/session/review')} 
+                  className="btn-primary py-1 px-3 text-xs bg-tv-red hover:bg-tv-red/90 border-tv-red glow-red flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse"></span> End & Review
+                </button>
+              ) : !activeSession ? (
+                <button type="button" onClick={() => {
+                  startSession(p.id);
+                  toast.success('Trading session started! Live tracking enabled. 📈');
+                  navigate('/app/dashboard');
+                }} className="btn-primary py-1 px-3 text-xs glow-blue">
+                  Start Trading
+                </button>
+              ) : null}
             </div>
           </div>
         ))}

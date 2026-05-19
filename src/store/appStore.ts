@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export interface DailyCheckin {
   id: string;
@@ -34,6 +35,8 @@ export interface Trade {
   lesson: string;
   notes: string;
   tags: string[];
+  rulesChecked?: string[];
+  rulesViolated?: string[];
 }
 
 export interface SessionPlan {
@@ -47,15 +50,62 @@ export interface SessionPlan {
   notes: string;
 }
 
+export interface ActiveSession {
+  id: string;
+  planId: string;
+  date: string;
+  startTime: string;
+  endTime?: string;
+  startStatsSnapshot: {
+    chartChecks: number;
+    symbolSwitches: number;
+    postLossSpikes: number;
+  };
+  computedStats?: {
+    sessionChartChecks: number;
+    sessionSymbolSwitches: number;
+    sessionPostLossSpikes: number;
+    totalTrades: number;
+    winRate: number;
+    netPnl: number;
+    rulesViolatedCount: number;
+    disciplineScore: number;
+  };
+  reviewNotes?: string;
+}
+
 interface AppState {
   checkins: DailyCheckin[];
   trades: Trade[];
   sessionPlans: SessionPlan[];
+  tradingRules: string[];
+  entryChecklistRules: string[];
+  lastRulesReadDate: string | null;
   todayCheckin: DailyCheckin | null;
+  extensionInstalled: boolean;
+  extensionEvents: any[];
+  extensionStats: {
+    chartChecks: number;
+    symbolSwitches: number;
+    postLossSpikes: number;
+    lastRefreshTime?: Record<string, number>;
+  };
+  activeSession: ActiveSession | null;
+  pastSessions: ActiveSession[];
   addCheckin: (c: DailyCheckin) => void;
   addTrade: (t: Trade) => void;
+  updateTrade: (id: string, updates: Partial<Trade>) => void;
+  deleteTrade: (id: string) => void;
   addSessionPlan: (s: SessionPlan) => void;
+  updateRules: (rules: string[]) => void;
+  updateEntryChecklistRules: (rules: string[]) => void;
+  markRulesRead: () => void;
   setTodayCheckin: (c: DailyCheckin | null) => void;
+  setExtensionInstalled: (installed: boolean) => void;
+  setExtensionData: (events: any[], stats: any) => void;
+  clearExtensionData: () => void;
+  startSession: (planId: string) => void;
+  endSession: (notes?: string) => void;
 }
 
 // Seed data for demo
@@ -73,13 +123,108 @@ const DEMO_CHECKINS: DailyCheckin[] = [
   { id:'c3', date:'2026-05-17', emotion:'frustrated', sleepQuality:5, stressLevel:7, mentalClarity:4, hasRevengeMindset:true, maxRisk:3, maxTrades:5, notes:'Bad night, should not trade' },
 ];
 
-export const useAppStore = create<AppState>()((set) => ({
-  checkins: DEMO_CHECKINS,
-  trades: DEMO_TRADES,
-  sessionPlans: [],
-  todayCheckin: DEMO_CHECKINS[0],
-  addCheckin: (c) => set((s) => ({ checkins: [c, ...s.checkins], todayCheckin: c })),
-  addTrade: (t) => set((s) => ({ trades: [t, ...s.trades] })),
-  addSessionPlan: (sp) => set((s) => ({ sessionPlans: [sp, ...s.sessionPlans] })),
-  setTodayCheckin: (c) => set({ todayCheckin: c }),
-}));
+export const useAppStore = create<AppState>()(
+  persist(
+    (set) => ({
+      checkins: DEMO_CHECKINS,
+      trades: DEMO_TRADES,
+      sessionPlans: [],
+      tradingRules: [
+        "I will never risk more than 1% of my account on a single trade.",
+        "I will stop trading after 3 consecutive losses.",
+        "I will only take trades that fit my documented setups.",
+        "I will not move my stop loss further away once a trade is active.",
+        "I will fill out my psychological check-in before looking at charts."
+      ],
+      entryChecklistRules: [
+        "Trend alignment confirmed (Higher Timeframe & Entry Timeframe)",
+        "Key support/resistance level verified with price action rejection",
+        "Risk-to-reward ratio is at least 1:2 based on Stop Loss & Take Profit",
+        "Stop loss and take profit parameters set inside the broker",
+        "High-impact economic news checked and no major events in the next 30 mins"
+      ],
+      lastRulesReadDate: null,
+      todayCheckin: DEMO_CHECKINS[0],
+      extensionInstalled: false,
+      extensionEvents: [],
+      extensionStats: { chartChecks: 0, symbolSwitches: 0, postLossSpikes: 0 },
+      activeSession: null,
+      pastSessions: [],
+      addCheckin: (c) => set((s) => ({ checkins: [c, ...s.checkins], todayCheckin: c })),
+      addTrade: (t) => set((s) => ({ trades: [t, ...s.trades] })),
+      updateTrade: (id, updates) => set((s) => ({ trades: s.trades.map((t) => t.id === id ? { ...t, ...updates } : t) })),
+      deleteTrade: (id) => set((s) => ({ trades: s.trades.filter((t) => t.id !== id) })),
+      addSessionPlan: (sp) => set((s) => ({ sessionPlans: [sp, ...s.sessionPlans] })),
+      updateRules: (rules) => set({ tradingRules: rules }),
+      updateEntryChecklistRules: (rules) => set({ entryChecklistRules: rules }),
+      markRulesRead: () => set({ lastRulesReadDate: new Date().toISOString().split('T')[0] }),
+      setTodayCheckin: (c) => set({ todayCheckin: c }),
+      setExtensionInstalled: (installed) => set({ extensionInstalled: installed }),
+      setExtensionData: (events, stats) => set({ extensionEvents: events, extensionStats: stats }),
+      clearExtensionData: () => set({ extensionEvents: [], extensionStats: { chartChecks: 0, symbolSwitches: 0, postLossSpikes: 0 } }),
+      startSession: (planId) => set((s) => {
+        const today = new Date().toISOString().split('T')[0];
+        return {
+          activeSession: {
+            id: Date.now().toString(),
+            planId,
+            date: today,
+            startTime: new Date().toISOString(),
+            startStatsSnapshot: {
+              chartChecks: s.extensionStats.chartChecks || 0,
+              symbolSwitches: s.extensionStats.symbolSwitches || 0,
+              postLossSpikes: s.extensionStats.postLossSpikes || 0,
+            }
+          }
+        };
+      }),
+      endSession: (notes) => set((s) => {
+        if (!s.activeSession) return {};
+        
+        const sessionTrades = s.trades.filter(t => t.date === s.activeSession!.date);
+        const totalTrades = sessionTrades.length;
+        const winningTrades = sessionTrades.filter(t => t.pnl > 0).length;
+        const winRate = totalTrades ? Math.round((winningTrades / totalTrades) * 100) : 0;
+        const netPnl = sessionTrades.reduce((acc, t) => acc + t.pnl, 0);
+        
+        const sessionChartChecks = Math.max(0, (s.extensionStats.chartChecks || 0) - s.activeSession.startStatsSnapshot.chartChecks);
+        const sessionSymbolSwitches = Math.max(0, (s.extensionStats.symbolSwitches || 0) - s.activeSession.startStatsSnapshot.symbolSwitches);
+        const sessionPostLossSpikes = Math.max(0, (s.extensionStats.postLossSpikes || 0) - s.activeSession.startStatsSnapshot.postLossSpikes);
+        
+        const rulesViolatedCount = sessionTrades.reduce((acc, t) => acc + (t.rulesViolated?.length || 0), 0);
+        const impulsiveCount = sessionTrades.filter(t => t.isImpulsive).length;
+        
+        let disciplineScore = 100;
+        if (totalTrades > 0) {
+          disciplineScore -= (rulesViolatedCount * 15);
+          disciplineScore -= (impulsiveCount * 25);
+          if (sessionChartChecks > 30) disciplineScore -= 10;
+          if (sessionSymbolSwitches > 10) disciplineScore -= 10;
+          disciplineScore = Math.max(0, Math.min(100, disciplineScore));
+        }
+
+        const completedSession: ActiveSession = {
+          ...s.activeSession,
+          endTime: new Date().toISOString(),
+          computedStats: {
+            sessionChartChecks,
+            sessionSymbolSwitches,
+            sessionPostLossSpikes,
+            totalTrades,
+            winRate,
+            netPnl,
+            rulesViolatedCount,
+            disciplineScore
+          },
+          reviewNotes: notes || ''
+        };
+
+        return {
+          activeSession: null,
+          pastSessions: [completedSession, ...s.pastSessions]
+        };
+      }),
+    }),
+    { name: 'tradeguru-data' }
+  )
+);

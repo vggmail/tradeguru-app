@@ -7,10 +7,14 @@ import Dashboard from './pages/Dashboard';
 import DailyCheckin from './pages/DailyCheckin';
 import SessionPlanning from './pages/SessionPlanning';
 import TradeJournal from './pages/TradeJournal';
+import LogTradePage from './pages/LogTradePage';
 import Analytics from './pages/Analytics';
 import BehaviorPage from './pages/BehaviorPage';
 import SettingsPage from './pages/SettingsPage';
+import SessionReview from './pages/SessionReview';
 import { useAuthStore } from './store/authStore';
+import { useThemeStore } from './store/themeStore';
+import { useEffect } from 'react';
 
 const queryClient = new QueryClient();
 
@@ -21,6 +25,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const initTheme = useThemeStore(s => s.initTheme);
+  
+  useEffect(() => {
+    initTheme();
+  }, [initTheme]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
@@ -36,7 +46,9 @@ export default function App() {
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="checkin" element={<DailyCheckin />} />
             <Route path="session" element={<SessionPlanning />} />
+            <Route path="session/review" element={<SessionReview />} />
             <Route path="journal" element={<TradeJournal />} />
+            <Route path="journal/log" element={<LogTradePage />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="behavior" element={<BehaviorPage />} />
             <Route path="settings" element={<SettingsPage />} />
