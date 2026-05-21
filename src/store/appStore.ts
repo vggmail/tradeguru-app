@@ -2,18 +2,20 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import api from '../api/client';
 import { useAuthStore } from './authStore';
+import { toast } from 'sonner';
 
 export interface DailyCheckin {
   id: string;
   date: string;
-  emotion: string;
-  sleepQuality: number;
+  emotionBefore: string;
+  sleepHours: number;
   stressLevel: number;
-  mentalClarity: number;
+  energyLevel: number;
+  reviewedSetups: boolean;
+  maxRiskToday: number;
+  maxTradesToday: number;
   hasRevengeMindset: boolean;
-  maxRisk: number;
-  maxTrades: number;
-  notes: string;
+  emotionalRisk: string;
 }
 
 export interface Trade {
@@ -94,15 +96,18 @@ interface AppState {
   };
   activeSession: ActiveSession | null;
   pastSessions: ActiveSession[];
-  addCheckin: (c: DailyCheckin) => void;
-  addTrade: (t: Trade) => void;
-  updateTrade: (id: string, updates: Partial<Trade>) => void;
-  deleteTrade: (id: string) => void;
+  fetchCheckins: () => Promise<void>;
+  addCheckin: (c: Omit<DailyCheckin, 'id'>) => Promise<void>;
+  setTodayCheckin: (c: DailyCheckin | null) => void;
+  addTrade: (t: Omit<Trade, 'id'>) => Promise<void>;
+  updateTrade: (id: string, updates: Partial<Trade>) => Promise<void>;
+  deleteTrade: (id: string) => Promise<void>;
+  fetchTrades: () => Promise<void>;
+  syncRules: () => void;
   addSessionPlan: (s: SessionPlan) => void;
   updateRules: (rules: string[]) => void;
   updateEntryChecklistRules: (rules: string[]) => void;
   markRulesRead: () => void;
-  setTodayCheckin: (c: DailyCheckin | null) => void;
   setExtensionInstalled: (installed: boolean) => void;
   setExtensionData: (events: any[], stats: any) => void;
   clearExtensionData: () => void;
@@ -119,11 +124,7 @@ const DEMO_TRADES: Trade[] = [
   { id:'t5', date:'2026-05-15', symbol:'BTC/USDT', direction:'short', entry:66800, exit:66200, sl:67200, tp:65800, riskPct:1.0, pnl:400, timeframe:'1H', setupType:'Distribution', emotionBefore:'focused', emotionAfter:'calm', confidence:7, followedPlan:true, isImpulsive:false, lesson:'Good patience', notes:'', tags:['crypto'] },
 ];
 
-const DEMO_CHECKINS: DailyCheckin[] = [
-  { id:'c1', date:'2026-05-19', emotion:'focused', sleepQuality:8, stressLevel:3, mentalClarity:8, hasRevengeMindset:false, maxRisk:2, maxTrades:3, notes:'' },
-  { id:'c2', date:'2026-05-18', emotion:'calm', sleepQuality:7, stressLevel:2, mentalClarity:9, hasRevengeMindset:false, maxRisk:2, maxTrades:4, notes:'' },
-  { id:'c3', date:'2026-05-17', emotion:'frustrated', sleepQuality:5, stressLevel:7, mentalClarity:4, hasRevengeMindset:true, maxRisk:3, maxTrades:5, notes:'Bad night, should not trade' },
-];
+const DEMO_CHECKINS: DailyCheckin[] = []; // Clear demo data for live sync
 
 export const useAppStore = create<AppState>()(
   persist(
@@ -131,20 +132,8 @@ export const useAppStore = create<AppState>()(
       checkins: DEMO_CHECKINS,
       trades: DEMO_TRADES,
       sessionPlans: [],
-      tradingRules: [
-        "I will never risk more than 1% of my account on a single trade.",
-        "I will stop trading after 3 consecutive losses.",
-        "I will only take trades that fit my documented setups.",
-        "I will not move my stop loss further away once a trade is active.",
-        "I will fill out my psychological check-in before looking at charts."
-      ],
-      entryChecklistRules: [
-        "Trend alignment confirmed (Higher Timeframe & Entry Timeframe)",
-        "Key support/resistance level verified with price action rejection",
-        "Risk-to-reward ratio is at least 1:2 based on Stop Loss & Take Profit",
-        "Stop loss and take profit parameters set inside the broker",
-        "High-impact economic news checked and no major events in the next 30 mins"
-      ],
+      tradingRules: [],
+      entryChecklistRules: [],
       lastRulesReadDate: null,
       todayCheckin: DEMO_CHECKINS[0],
       extensionInstalled: false,
@@ -152,13 +141,75 @@ export const useAppStore = create<AppState>()(
       extensionStats: { chartChecks: 0, symbolSwitches: 0, postLossSpikes: 0 },
       activeSession: null,
       pastSessions: [],
-      addCheckin: (c) => set((s) => ({ checkins: [c, ...s.checkins], todayCheckin: c })),
-      addTrade: (t) => set((s) => ({ trades: [t, ...s.trades] })),
-      updateTrade: (id, updates) => set((s) => ({ trades: s.trades.map((t) => t.id === id ? { ...t, ...updates } : t) })),
-      deleteTrade: (id) => set((s) => ({ trades: s.trades.filter((t) => t.id !== id) })),
+      fetchCheckins: async () => {
+        try {
+          const { data } = await api.get('/checkins');
+          set({ checkins: data });
+          // Check if today's checkin exists
+          const today = new Date().toISOString().split('T')[0];
+          const todayC = data.find((c: DailyCheckin) => c.date === today);
+          if (todayC) set({ todayCheckin: todayC });
+        } catch (err) {
+          console.error('Failed to fetch checkins', err);
+        }
+      },
+      addCheckin: async (c) => {
+        try {
+          const { data } = await api.post('/checkins', c);
+          set((s) => ({ 
+            checkins: [data, ...s.checkins.filter(prev => prev.date !== data.date)], 
+            todayCheckin: data 
+          }));
+          toast.success('Mental state recorded! 🧠');
+        } catch (err) {
+          toast.error('Failed to sync check-in.');
+        }
+      },
+      addTrade: async (t) => {
+        try {
+          const { data } = await api.post('/trades', t);
+          set((s) => ({ trades: [data, ...s.trades] }));
+          toast.success('Trade logged to cloud! ☁️');
+        } catch (err: any) {
+          toast.error('Failed to save trade.');
+        }
+      },
+      updateTrade: async (id, updates) => {
+        // Local update for now
+        set((s) => ({ trades: s.trades.map((t) => t.id === id ? { ...t, ...updates } : t) }));
+      },
+      deleteTrade: async (id) => {
+        // Local delete for now
+        set((s) => ({ trades: s.trades.filter((t) => t.id !== id) }));
+      },
+      fetchTrades: async () => {
+        try {
+          const { data } = await api.get('/trades');
+          set({ trades: data });
+        } catch (err: any) {
+          console.error('Failed to sync trades:', err);
+        }
+      },
+      syncRules: () => {
+        const { user } = useAuthStore.getState();
+        if (user) {
+          set({ 
+            tradingRules: user.tradingRules || [], 
+            entryChecklistRules: user.entryChecklistRules || [] 
+          });
+        }
+      },
       addSessionPlan: (sp) => set((s) => ({ sessionPlans: [sp, ...s.sessionPlans] })),
-      updateRules: (rules) => set({ tradingRules: rules }),
-      updateEntryChecklistRules: (rules) => set({ entryChecklistRules: rules }),
+      updateRules: async (rules) => {
+        set({ tradingRules: rules });
+        const { isAuthenticated, updateUser } = useAuthStore.getState();
+        if (isAuthenticated) await updateUser({ tradingRules: rules });
+      },
+      updateEntryChecklistRules: async (rules) => {
+        set({ entryChecklistRules: rules });
+        const { isAuthenticated, updateUser } = useAuthStore.getState();
+        if (isAuthenticated) await updateUser({ entryChecklistRules: rules });
+      },
       markRulesRead: () => set({ lastRulesReadDate: new Date().toISOString().split('T')[0] }),
       setTodayCheckin: (c) => set({ todayCheckin: c }),
       setExtensionInstalled: (installed) => set({ extensionInstalled: installed }),

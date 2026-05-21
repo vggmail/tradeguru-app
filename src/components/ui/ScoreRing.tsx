@@ -17,7 +17,7 @@ export default function ScoreRing({ score, size = 100, label, sublabel }: ScoreR
     <div className="flex flex-col items-center gap-1">
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90" viewBox="0 0 80 80">
-          <circle cx="40" cy="40" r={radius} fill="none" stroke="#2a2e39" strokeWidth="6" />
+          <circle cx="40" cy="40" r={radius} fill="none" stroke="rgb(var(--tv-chart-grid))" strokeWidth="6" />
           <circle
             cx="40" cy="40" r={radius}
             fill="none"

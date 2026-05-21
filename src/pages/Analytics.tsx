@@ -85,9 +85,9 @@ export default function Analytics() {
           <div className="section-title mb-4">Daily P&L</div>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={dailyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a2e39"/>
-              <XAxis dataKey="date" tick={{fill:'#787b86',fontSize:10}} axisLine={false} tickLine={false}/>
-              <YAxis tick={{fill:'#787b86',fontSize:10}} axisLine={false} tickLine={false}/>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--tv-chart-grid))"/>
+              <XAxis dataKey="date" tick={{fill:'rgb(var(--tv-chart-label))',fontSize:10}} axisLine={false} tickLine={false}/>
+              <YAxis tick={{fill:'rgb(var(--tv-chart-label))',fontSize:10}} axisLine={false} tickLine={false}/>
               <Tooltip content={<CustomTooltip/>}/>
               <Bar dataKey="pnl" radius={[4,4,0,0]}>
                 {dailyData.map((d,i)=><Cell key={i} fill={d.pnl>=0?'#26a69a':'#ef5350'}/>)}
@@ -101,9 +101,9 @@ export default function Analytics() {
           <div className="section-title mb-4">Win Rate by Emotion</div>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={emotionStats} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a2e39"/>
-              <XAxis type="number" domain={[0,100]} tick={{fill:'#787b86',fontSize:10}} axisLine={false} tickLine={false}/>
-              <YAxis dataKey="emotion" type="category" tick={{fill:'#787b86',fontSize:10}} axisLine={false} tickLine={false} width={70}/>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--tv-chart-grid))"/>
+              <XAxis type="number" domain={[0,100]} tick={{fill:'rgb(var(--tv-chart-label))',fontSize:10}} axisLine={false} tickLine={false}/>
+              <YAxis dataKey="emotion" type="category" tick={{fill:'rgb(var(--tv-chart-label))',fontSize:10}} axisLine={false} tickLine={false} width={70}/>
               <Tooltip content={<CustomTooltip/>}/>
               <Bar dataKey="winRate" radius={[0,4,4,0]}>
                 {emotionStats.map((d,i)=><Cell key={i} fill={scoreColor(d.winRate)}/>)}
@@ -117,8 +117,8 @@ export default function Analytics() {
           <div className="section-title mb-4">Behavioral Radar</div>
           <ResponsiveContainer width="100%" height={220}>
             <RadarChart data={radarData}>
-              <PolarGrid stroke="#2a2e39"/>
-              <PolarAngleAxis dataKey="subject" tick={{fill:'#787b86',fontSize:10}}/>
+              <PolarGrid stroke="rgb(var(--tv-chart-grid))"/>
+              <PolarAngleAxis dataKey="subject" tick={{fill:'rgb(var(--tv-chart-label))',fontSize:10}}/>
               <Radar name="Score" dataKey="A" stroke="#2962ff" fill="#2962ff" fillOpacity={0.25} strokeWidth={2}/>
             </RadarChart>
           </ResponsiveContainer>
@@ -132,7 +132,7 @@ export default function Analytics() {
               <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={4} dataKey="value">
                 {pieData.map((d,i)=><Cell key={i} fill={d.color}/>)}
               </Pie>
-              <Legend formatter={(v)=><span style={{color:'#787b86',fontSize:12}}>{v}</span>}/>
+              <Legend formatter={(v)=><span className="text-tv-muted text-[12px]">{v}</span>}/>
               <Tooltip content={<CustomTooltip/>}/>
             </PieChart>
           </ResponsiveContainer>

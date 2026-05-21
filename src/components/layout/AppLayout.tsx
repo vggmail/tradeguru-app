@@ -6,9 +6,14 @@ import RulesOverlay from '../RulesOverlay';
 import { useAppStore } from '../../store/appStore';
 
 export default function AppLayout() {
-  const { setExtensionInstalled, setExtensionData, clearExtensionData } = useAppStore();
+  const { setExtensionInstalled, setExtensionData, clearExtensionData, fetchTrades, fetchCheckins, syncRules } = useAppStore();
 
   useEffect(() => {
+    // Sync historical data from DB
+    fetchTrades();
+    fetchCheckins();
+    syncRules();
+
     // 1. Check if extension marker already exists in DOM
     const checkExtension = () => {
       const marker = document.getElementById('tradeguru-extension-marker');

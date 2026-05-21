@@ -13,6 +13,7 @@ export default function LogTradePage() {
   const navigate = useNavigate();
   const addTrade = useAppStore(s => s.addTrade);
   const entryChecklistRules = useAppStore(s => s.entryChecklistRules);
+  const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     symbol: '',
@@ -54,43 +55,48 @@ export default function LogTradePage() {
     ? (Number(form.exit) - Number(form.entry)) * (form.direction === 'long' ? 1 : -1)
     : 0;
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.symbol || !form.entry || !form.exit) {
       toast.error('Fill required fields');
       return;
     }
 
+    setLoading(true);
     const rulesChecked = entryChecklistRules.filter((_, i) => checkedRules[i]);
     const rulesViolated = entryChecklistRules.filter((_, i) => !checkedRules[i]);
 
-    addTrade({
-      id: Date.now().toString(),
-      date: new Date().toISOString().split('T')[0],
-      symbol: form.symbol.toUpperCase(),
-      direction: form.direction,
-      entry: Number(form.entry),
-      exit: Number(form.exit),
-      sl: Number(form.sl),
-      tp: Number(form.tp),
-      riskPct: Number(form.riskPct),
-      pnl,
-      timeframe: form.timeframe,
-      setupType: form.setupType,
-      emotionBefore: form.emotionBefore,
-      emotionAfter: form.emotionAfter,
-      confidence: form.confidence,
-      followedPlan: form.followedPlan,
-      isImpulsive: form.isImpulsive,
-      lesson: form.lesson,
-      notes: form.notes,
-      tags: [],
-      rulesChecked,
-      rulesViolated,
-    } as Trade);
+    try {
+      await addTrade({
+        date: new Date().toISOString().split('T')[0],
+        symbol: form.symbol.toUpperCase(),
+        direction: form.direction,
+        entry: Number(form.entry),
+        exit: Number(form.exit),
+        sl: Number(form.sl),
+        tp: Number(form.tp),
+        riskPct: Number(form.riskPct),
+        pnl,
+        timeframe: form.timeframe,
+        setupType: form.setupType,
+        emotionBefore: form.emotionBefore,
+        emotionAfter: form.emotionAfter,
+        confidence: form.confidence,
+        followedPlan: form.followedPlan,
+        isImpulsive: form.isImpulsive,
+        lesson: form.lesson,
+        notes: form.notes,
+        tags: [],
+        rulesChecked,
+        rulesViolated,
+      });
 
-    toast.success('Trade logged! 📈');
-    navigate('/app/journal');
+      navigate('/app/journal');
+    } catch (err: any) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

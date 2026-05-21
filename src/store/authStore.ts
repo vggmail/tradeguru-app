@@ -1,14 +1,16 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import api from '../api/client';
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  avatar?: string;
   experience: 'beginner' | 'intermediate' | 'advanced' | 'professional';
-  markets: string[];
-  joinedAt: string;
+  marketFocus: string[];
+  dailyLossLimit: number;
+  tradingRules: string[];
+  entryChecklistRules: string[];
 }
 
 interface AuthState {
@@ -17,7 +19,8 @@ interface AuthState {
   isAuthenticated: boolean;
   login: (user: User, token: string) => void;
   logout: () => void;
-  updateUser: (partial: Partial<User>) => void;
+  updateUser: (partial: Partial<User>) => Promise<void>;
+  fetchProfile: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -28,8 +31,22 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       login: (user, token) => set({ user, token, isAuthenticated: true }),
       logout: () => set({ user: null, token: null, isAuthenticated: false }),
-      updateUser: (partial) =>
-        set((s) => ({ user: s.user ? { ...s.user, ...partial } : null })),
+      updateUser: async (partial) => {
+        try {
+          const { data } = await api.put('/auth/profile', partial);
+          set({ user: data });
+        } catch (err) {
+          console.error('Failed to update profile', err);
+        }
+      },
+      fetchProfile: async () => {
+        try {
+          const { data } = await api.get('/auth/profile');
+          set({ user: data });
+        } catch (err) {
+          console.error('Failed to sync profile', err);
+        }
+      },
     }),
     { name: 'tradeguru-auth' }
   )

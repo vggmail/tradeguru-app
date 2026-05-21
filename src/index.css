@@ -4,17 +4,19 @@
 @tailwind utilities;
 
 :root {
-  --tv-bg: 248 249 253;
+  --tv-bg: 242 245 249;
   --tv-surface: 255 255 255;
-  --tv-surface2: 243 244 246;
-  --tv-border: 224 227 235;
-  --tv-hover: 240 243 250;
+  --tv-surface2: 236 239 248;
+  --tv-border: 215 218 230;
+  --tv-hover: 228 232 245;
   --tv-blue: 41 98 255;
   --tv-green: 8 153 129;
-  --tv-red: 242 54 69;
-  --tv-yellow: 247 181 0;
+  --tv-red: 224 45 60;
+  --tv-yellow: 212 159 0;
   --tv-text: 19 23 34;
-  --tv-muted: 120 123 134;
+  --tv-muted: 93 96 107;
+  --tv-chart-grid: 224 227 235;
+  --tv-chart-label: 120 123 134;
 }
 
 .dark {
@@ -29,6 +31,8 @@
   --tv-yellow: 247 181 0;
   --tv-text: 209 212 220;
   --tv-muted: 120 123 134;
+  --tv-chart-grid: 42 46 57;
+  --tv-chart-label: 120 123 134;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }

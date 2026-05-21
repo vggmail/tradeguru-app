@@ -26,8 +26,8 @@ export default function DailyCheckin() {
   const addCheckin = useAppStore(s=>s.addCheckin);
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    emotion:'calm', sleepQuality:7, stressLevel:3, mentalClarity:7,
-    hasRevengeMindset:false, maxRisk:2, maxTrades:3, notes:'',
+    emotionBefore:'calm', sleepHours:7, stressLevel:3, energyLevel:7,
+    hasRevengeMindset:false, reviewedSetups:true, maxRiskToday:1, maxTradesToday:3, emotionalRisk:'',
   });
 
   const steps = [
@@ -37,13 +37,15 @@ export default function DailyCheckin() {
     {title:'Final Review',icon:Check},
   ];
 
-  const submit = () => {
-    addCheckin({ id:Date.now().toString(), date:new Date().toISOString().split('T')[0], ...form } as DailyCheckin);
-    toast.success('Check-in complete! Stay disciplined. 🧠');
+  const submit = async () => {
+    await addCheckin({ 
+      date: new Date().toISOString().split('T')[0], 
+      ...form 
+    });
     navigate('/app/dashboard');
   };
 
-  const em = emotionLabel(form.emotion);
+  const em = emotionLabel(form.emotionBefore);
 
   return (
     <div className="min-h-screen p-6 max-w-2xl mx-auto animate-fade-in">
@@ -76,20 +78,20 @@ export default function DailyCheckin() {
             <label className="label">How are you feeling right now?</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {EMOTIONS.map(e=>{const el=emotionLabel(e);return(
-                <button key={e} onClick={()=>setForm(p=>({...p,emotion:e}))}
+                <button key={e} onClick={()=>setForm(p=>({...p,emotionBefore:e}))}
                   className={cn('p-3 rounded-xl border text-sm font-medium transition-all text-center',
-                    form.emotion===e?'scale-105':'border-tv-border text-tv-muted hover:border-tv-hover hover:text-tv-text')}
-                  style={form.emotion===e?{borderColor:el.color,color:el.color,background:el.color+'18'}:{}}>
+                    form.emotionBefore===e?'scale-105':'border-tv-border text-tv-muted hover:border-tv-hover hover:text-tv-text')}
+                  style={form.emotionBefore===e?{borderColor:el.color,color:el.color,background:el.color+'18'}:{}}>
                   {el.label}
                 </button>
               );})}
             </div>
-            {(form.emotion==='revenge'||form.emotion==='frustrated')&&(
+            {(form.emotionBefore==='revenge'||form.emotionBefore==='frustrated')&&(
               <div className="p-3 bg-tv-red/10 border border-tv-red/30 rounded-lg flex items-center gap-2 text-tv-red text-sm">
                 <AlertTriangle className="w-4 h-4 flex-shrink-0"/>Consider reducing size or skipping today.
               </div>
             )}
-            <textarea value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))}
+            <textarea value={form.emotionalRisk} onChange={e=>setForm(p=>({...p,emotionalRisk:e.target.value}))}
               placeholder="Anything on your mind that could affect trading today..." className="input h-20 resize-none"/>
           </div>
         )}
@@ -98,8 +100,8 @@ export default function DailyCheckin() {
           <div className="space-y-6">
             <div>
               <div className="flex justify-between mb-2"><label className="label">Sleep Quality</label><span className="text-tv-muted text-xs">Last night's sleep</span></div>
-              <RangeSlider value={form.sleepQuality} onChange={v=>setForm(p=>({...p,sleepQuality:v}))}/>
-              {form.sleepQuality<=4&&<p className="text-tv-red text-xs mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3"/>Poor sleep → impulsive trades. Trade minimal size.</p>}
+              <RangeSlider value={form.sleepHours} onChange={v=>setForm(p=>({...p,sleepHours:v}))}/>
+              {form.sleepHours<=4&&<p className="text-tv-red text-xs mt-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3"/>Poor sleep → impulsive trades. Trade minimal size.</p>}
             </div>
             <div>
               <div className="flex justify-between mb-2"><label className="label">Stress Level</label><span className="text-tv-muted text-xs">External life stress</span></div>
@@ -108,7 +110,7 @@ export default function DailyCheckin() {
             </div>
             <div>
               <div className="flex justify-between mb-2"><label className="label">Mental Clarity</label><span className="text-tv-muted text-xs">Can you think clearly?</span></div>
-              <RangeSlider value={form.mentalClarity} onChange={v=>setForm(p=>({...p,mentalClarity:v}))}/>
+              <RangeSlider value={form.energyLevel} onChange={v=>setForm(p=>({...p,energyLevel:v}))}/>
             </div>
             <div className="flex items-center gap-3 p-4 bg-tv-surface2 rounded-xl border border-tv-border cursor-pointer"
               onClick={()=>setForm(p=>({...p,hasRevengeMindset:!p.hasRevengeMindset}))}>
@@ -127,15 +129,15 @@ export default function DailyCheckin() {
           <div className="space-y-6">
             <div>
               <label className="label">Max Risk Per Trade (%)</label>
-              <RangeSlider value={form.maxRisk} onChange={v=>setForm(p=>({...p,maxRisk:v}))} min={1} max={5} upColor="#2962ff" downColor="#ef5350"/>
+              <RangeSlider value={form.maxRiskToday} onChange={v=>setForm(p=>({...p,maxRiskToday:v}))} min={1} max={5} upColor="#2962ff" downColor="#ef5350"/>
             </div>
             <div>
               <label className="label">Max Trades Today</label>
               <div className="flex gap-2 flex-wrap mt-2">
                 {[1,2,3,4,5,6,8,10].map(n=>(
-                  <button key={n} onClick={()=>setForm(p=>({...p,maxTrades:n}))}
+                  <button key={n} onClick={()=>setForm(p=>({...p,maxTradesToday:n}))}
                     className={cn('w-12 h-12 rounded-xl border font-bold text-sm transition-all',
-                      form.maxTrades===n?'border-tv-blue bg-tv-blue/15 text-tv-blue':'border-tv-border text-tv-muted hover:border-tv-hover hover:text-tv-text')}>
+                      form.maxTradesToday===n?'border-tv-blue bg-tv-blue/15 text-tv-blue':'border-tv-border text-tv-muted hover:border-tv-hover hover:text-tv-text')}>
                     {n}
                   </button>
                 ))}
@@ -145,7 +147,7 @@ export default function DailyCheckin() {
               <div className="text-tv-blue text-sm font-semibold mb-2 flex items-center gap-1"><Zap className="w-4 h-4"/>Today's Auto-Rules</div>
               <ul className="text-tv-muted text-sm space-y-1">
                 <li>• No revenge trades after losses</li>
-                <li>• Stop after {form.maxTrades} trades or {form.maxRisk*3}% daily drawdown</li>
+                <li>• Stop after {form.maxTradesToday} trades or {form.maxRiskToday*3}% daily drawdown</li>
                 <li>• Respect all stop-losses — no manual overrides</li>
                 <li>• Journal every trade immediately after close</li>
               </ul>
@@ -157,9 +159,9 @@ export default function DailyCheckin() {
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-3">
               {[
-                {label:'Emotion',value:em.label},{label:'Sleep',value:`${form.sleepQuality}/10`},
-                {label:'Stress',value:`${form.stressLevel}/10`},{label:'Clarity',value:`${form.mentalClarity}/10`},
-                {label:'Max Risk',value:`${form.maxRisk}%`},{label:'Max Trades',value:String(form.maxTrades)},
+                {label:'Emotion',value:em.label},{label:'Sleep',value:`${form.sleepHours}/10`},
+                {label:'Stress',value:`${form.stressLevel}/10`},{label:'Clarity',value:`${form.energyLevel}/10`},
+                {label:'Max Risk',value:`${form.maxRiskToday}%`},{label:'Max Trades',value:String(form.maxTradesToday)},
               ].map(s=>(
                 <div key={s.label} className="bg-tv-surface2 rounded-lg p-3 border border-tv-border">
                   <div className="text-tv-muted text-xs">{s.label}</div>

@@ -47,9 +47,11 @@ export default function LoginPage() {
           id: data.user.id,
           name: data.user.name || 'Trader',
           email: data.user.email,
-          experience: data.user.experience || 'intermediate',
-          markets: data.user.marketFocus || ['Forex'],
-          joinedAt: data.user.createdAt || new Date().toISOString()
+          experience: data.user.experience,
+          marketFocus: data.user.marketFocus,
+          dailyLossLimit: data.user.dailyLossLimit,
+          tradingRules: data.user.tradingRules || [],
+          entryChecklistRules: data.user.entryChecklistRules || []
         },
         data.token
       );
@@ -79,9 +81,11 @@ export default function LoginPage() {
           id: data.user.id,
           name: data.user.name || 'Trader',
           email: data.user.email,
-          experience: data.user.experience || 'intermediate',
-          markets: data.user.marketFocus || ['Forex'],
-          joinedAt: data.user.createdAt || new Date().toISOString()
+          experience: data.user.experience,
+          marketFocus: data.user.marketFocus,
+          dailyLossLimit: data.user.dailyLossLimit,
+          tradingRules: data.user.tradingRules || [],
+          entryChecklistRules: data.user.entryChecklistRules || []
         },
         data.token
       );
@@ -98,7 +102,16 @@ export default function LoginPage() {
 
   const handleDemo = () => {
     login(
-      { id: '1', name: 'Demo Trader', email: 'demo@tradeguru.app', experience: 'advanced', markets: ['Crypto', 'Forex', 'Indices'], joinedAt: new Date().toISOString() },
+      { 
+        id: '1', 
+        name: 'Demo Trader', 
+        email: 'demo@tradeguru.app', 
+        experience: 'advanced', 
+        marketFocus: ['Crypto', 'Forex', 'Indices'],
+        dailyLossLimit: 1000,
+        tradingRules: ['No trading after 3 losses', 'Wait for 15m confirmation'],
+        entryChecklistRules: ['Trend aligned', 'R:R > 2']
+      },
       'demo-token'
     );
     toast.success('Loaded demo account!');

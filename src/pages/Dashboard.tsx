@@ -90,7 +90,7 @@ export default function Dashboard() {
             <div>
               <div className="text-tv-text font-semibold text-sm">Today's check-in complete</div>
               <div className="text-tv-muted text-xs">
-                {emotionLabel(todayCheckin.emotion).label} · Sleep {todayCheckin.sleepQuality}/10 · Stress {todayCheckin.stressLevel}/10
+                {emotionLabel(todayCheckin.emotionBefore).label} · Sleep {todayCheckin.sleepHours}/10 · Stress {todayCheckin.stressLevel}/10
                 {todayCheckin.hasRevengeMindset && <span className="text-tv-red ml-2">⚠ Revenge mindset detected</span>}
               </div>
             </div>
@@ -139,7 +139,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="stat-card">
           <span className="text-tv-muted text-xs">Total P&L</span>
-          <span className="text-2xl font-bold" style={{ color: totalPnl >= 0 ? '#26a69a' : '#ef5350' }}>
+          <span className={`text-2xl font-bold ${totalPnl >= 0 ? 'text-tv-green' : 'text-tv-red'}`}>
             {formatCurrency(totalPnl)}
           </span>
           <span className="text-tv-muted text-xs">{trades.length} trades logged</span>
@@ -179,9 +179,9 @@ export default function Dashboard() {
                   <stop offset="95%" stopColor="#2962ff" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a2e39" />
-              <XAxis dataKey="date" tick={{ fill: '#787b86', fontSize: 10 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#787b86', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--tv-chart-grid))" />
+              <XAxis dataKey="date" tick={{ fill: 'rgb(var(--tv-chart-label))', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: 'rgb(var(--tv-chart-label))', fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Area type="monotone" dataKey="cumulative" stroke="#2962ff" strokeWidth={2} fill="url(#pnlGradient)" dot={false} />
             </AreaChart>
@@ -236,7 +236,7 @@ export default function Dashboard() {
                     </td>
                     <td className="py-3 pr-4 text-tv-muted">{t.entry}</td>
                     <td className="py-3 pr-4 text-tv-muted">{t.exit}</td>
-                    <td className="py-3 pr-4 font-semibold" style={{ color: t.pnl >= 0 ? '#26a69a' : '#ef5350' }}>
+                    <td className={`py-3 pr-4 font-semibold ${t.pnl >= 0 ? 'text-tv-green' : 'text-tv-red'}`}>
                       {formatCurrency(t.pnl)}
                     </td>
                     <td className="py-3 pr-4">
