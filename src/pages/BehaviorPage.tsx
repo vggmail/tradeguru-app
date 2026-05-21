@@ -1,24 +1,38 @@
+import { useState, useEffect } from 'react';
 import { Activity, Eye, AlertTriangle, Clock, TrendingUp, CheckCircle, Info, RefreshCw } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
-
-// Static fallbacks for demonstration if extension is not installed
-const MOCK_EVENTS = [
-  { time:'14:32', symbol:'BTC/USDT', type:'Compulsive refresh', count:23, signal:'anxiety', color:'#f7b500' },
-  { time:'14:15', symbol:'ETH/USDT', type:'Rapid symbol switch', count:8, signal:'fomo', color:'#ff9800' },
-  { time:'13:58', symbol:'BTC/USDT', type:'Post-loss monitoring', count:47, signal:'revenge', color:'#ef5350' },
-  { time:'11:20', symbol:'EUR/USD', type:'Normal monitoring', count:5, signal:'calm', color:'#26a69a' },
-  { time:'10:45', symbol:'NIFTY50', type:'Pre-trade research', count:12, signal:'focused', color:'#2962ff' },
-];
-
-const MOCK_TIMELINE = [
-  { time:'09:15', emotion:'😌 Calm', behavior:'Focused research', trade:'Long EUR/USD', outcome:'+$340', good:true },
-  { time:'11:30', emotion:'😤 Frustrated', behavior:'Rapid switching', trade:'Short NIFTY50 (impulsive)', outcome:'-$880', good:false },
-  { time:'13:45', emotion:'😡 Revenge', behavior:'Over-monitoring BTC', trade:'Long BTC (3× size)', outcome:'+$120', good:false },
-  { time:'15:00', emotion:'🎯 Focused', behavior:'Checklist completed', trade:'Long BTC/USDT', outcome:'+$1700', good:true },
-];
+import api from '../api/client';
 
 export default function BehaviorPage() {
   const { extensionInstalled, extensionEvents, extensionStats, trades } = useAppStore();
+  const [dbEvents, setDbEvents] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const { data } = await api.get('/telemetry/events');
+        setDbEvents(data);
+      } catch (err) {
+        console.error('Failed to fetch telemetry history', err);
+      }
+    };
+    fetchHistory();
+  }, []);
+
+  // Merge events: Preference to local live events, but show history from DB
+  const allEvents = [...extensionEvents];
+  dbEvents.forEach(dbE => {
+    // Basic de-duplication or just merge
+    if (!allEvents.some(e => e.timestamp === dbE.timestamp && e.type === dbE.eventType)) {
+      allEvents.push({
+        ...dbE,
+        type: dbE.eventType, // Map backend field to frontend prop
+      });
+    }
+  });
+
+  // Sort by time
+  const sortedEvents = allEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   // Reset extension data handler
   const handleResetData = () => {
@@ -109,30 +123,19 @@ export default function BehaviorPage() {
   }
 
   // Compile timeline items
-  let timelineItems: { time: string; title: string; desc: string; good: boolean }[] = [];
-  if (extensionInstalled && extensionEvents.length > 0) {
-    // Map real events
-    timelineItems = extensionEvents
-      .filter(e => ['symbol_switch', 'compulsive_check', 'compulsive_refresh', 'late_night'].includes(e.type))
-      .slice(-5)
-      .map(e => {
-        const timeStr = new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const good = e.signal === 'calm' || e.signal === 'focused';
-        return {
-          time: timeStr,
-          title: `${e.type.replace('_', ' ').toUpperCase()} (${e.symbol})`,
-          desc: e.message,
-          good
-        };
-      });
-  } else {
-    timelineItems = MOCK_TIMELINE.map(e => ({
-      time: e.time,
-      title: `${e.emotion} → ${e.behavior}`,
-      desc: `${e.trade} (${e.outcome})`,
-      good: e.good
-    }));
-  }
+  const timelineItems = sortedEvents
+    .filter(e => ['symbol_switch', 'compulsive_check', 'compulsive_refresh', 'late_night', 'symbol_view'].includes(e.type))
+    .slice(0, 10)
+    .map(e => {
+      const timeStr = new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const good = e.signal === 'calm' || e.signal === 'focused';
+      return {
+        time: timeStr,
+        title: `${(e.type || e.eventType || '').replace('_', ' ').toUpperCase()} (${e.symbol || 'N/A'})`,
+        desc: e.message || 'Behavior tracked',
+        good
+      };
+    });
 
   return (
     <div className="p-6 space-y-6 animate-fade-in">

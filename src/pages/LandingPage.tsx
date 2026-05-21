@@ -153,15 +153,17 @@ export default function LandingPage() {
 
       {/* Moat & Supported Portals */}
       <section className="max-w-6xl mx-auto px-6 pb-20">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-3 font-display">🔌 Dynamic Browser Integration</h2>
+          <p className="text-tv-muted text-lg">Your automated behavioral firewall, running right on your broker charts.</p>
+        </div>
+
         <div className="bg-gradient-to-br from-tv-surface to-tv-surface2 rounded-2xl border border-tv-border p-8 md:p-10 relative overflow-hidden shadow-xl">
           {/* Decorative gradients */}
           <div className="absolute -right-24 -bottom-24 w-80 h-80 bg-tv-blue/5 rounded-full blur-3xl pointer-events-none" />
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
             <div className="lg:col-span-7 space-y-6">
-              <span className="badge-blue text-xs px-2.5 py-1 uppercase tracking-wider font-semibold">
-                🔌 Dynamic Browser Integration
-              </span>
               <h2 className="text-3xl md:text-4xl font-bold text-tv-text leading-tight">
                 Our Chrome Extension is the ultimate <span className="gradient-text font-bold">behavioral firewall</span>
               </h2>

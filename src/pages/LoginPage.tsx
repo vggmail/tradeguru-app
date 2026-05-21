@@ -1,8 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Zap, Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
+import api from '../api/client';
+
+// Use a placeholder or env variable
+const GOOGLE_CLIENT_ID = "440039434568-p7k6oq8p78sqi52or6j5rtpjq5m4qv41.apps.googleusercontent.com";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -12,18 +16,84 @@ export default function LoginPage() {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    /* global google */
+    if (typeof (window as any).google !== 'undefined') {
+      const google = (window as any).google;
+
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCallback,
+        auto_select: true
+      });
+
+      google.accounts.id.renderButton(
+        document.getElementById("googleSignInDiv"),
+        { theme: "filled_blue", size: "large", width: "100%", shape: "rectangular" }
+      );
+
+      // Display One Tap prompt
+      google.accounts.id.prompt();
+    }
+  }, [mode]);
+
+  const handleGoogleCallback = async (response: any) => {
+    setLoading(true);
+    try {
+      const { data } = await api.post('/auth/google', { credential: response.credential });
+
+      login(
+        {
+          id: data.user.id,
+          name: data.user.name || 'Trader',
+          email: data.user.email,
+          experience: data.user.experience || 'intermediate',
+          markets: data.user.marketFocus || ['Forex'],
+          joinedAt: data.user.createdAt || new Date().toISOString()
+        },
+        data.token
+      );
+
+      toast.success('Signed in with Google! 🚀');
+      navigate('/app/dashboard');
+    } catch (err: any) {
+      toast.error('Google Sign-In failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handle = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate auth
-    await new Promise(r => setTimeout(r, 800));
-    login(
-      { id: '1', name: form.name || 'Demo Trader', email: form.email || 'trader@demo.com', experience: 'intermediate', markets: ['Crypto', 'Forex'], joinedAt: new Date().toISOString() },
-      'demo-token-123'
-    );
-    toast.success('Welcome back! 🚀');
-    navigate('/app/dashboard');
-    setLoading(false);
+    try {
+      const endpoint = mode === 'login' ? '/auth/login' : '/auth/register';
+      const payload = mode === 'login'
+        ? { email: form.email, password: form.password }
+        : { email: form.email, password: form.password, name: form.name };
+
+      const { data } = await api.post(endpoint, payload);
+
+      login(
+        {
+          id: data.user.id,
+          name: data.user.name || 'Trader',
+          email: data.user.email,
+          experience: data.user.experience || 'intermediate',
+          markets: data.user.marketFocus || ['Forex'],
+          joinedAt: data.user.createdAt || new Date().toISOString()
+        },
+        data.token
+      );
+
+      toast.success(mode === 'login' ? 'Welcome back! 🚀' : 'Account created successfully! ✨');
+      navigate('/app/dashboard');
+    } catch (err: any) {
+      const msg = err.response?.data?.error || 'Authentication failed. Please try again.';
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDemo = () => {
@@ -119,6 +189,8 @@ export default function LoginPage() {
             <span className="text-tv-muted text-xs">or</span>
             <div className="flex-1 h-px bg-tv-border" />
           </div>
+
+          <div id="googleSignInDiv" className="w-full mb-3" />
 
           <button onClick={handleDemo}
             className="w-full btn-ghost justify-center border border-tv-border py-2.5 text-sm">

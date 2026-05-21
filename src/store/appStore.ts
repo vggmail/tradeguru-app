@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import api from '../api/client';
+import { useAuthStore } from './authStore';
 
 export interface DailyCheckin {
   id: string;
@@ -160,7 +162,29 @@ export const useAppStore = create<AppState>()(
       markRulesRead: () => set({ lastRulesReadDate: new Date().toISOString().split('T')[0] }),
       setTodayCheckin: (c) => set({ todayCheckin: c }),
       setExtensionInstalled: (installed) => set({ extensionInstalled: installed }),
-      setExtensionData: (events, stats) => set({ extensionEvents: events, extensionStats: stats }),
+      setExtensionData: async (events, stats) => {
+        set({ extensionEvents: events, extensionStats: stats });
+        
+        // Sync new behavioral signals to backend if authenticated
+        const { isAuthenticated } = useAuthStore.getState();
+        if (isAuthenticated && events.length > 0) {
+          const lastEvent = events[events.length - 1];
+          // We only sync "signal" events (anxiety, fomo, etc) to keep the DB clean
+          if (lastEvent.signal !== 'calm') {
+            try {
+              await api.post('/telemetry/events', {
+                eventType: lastEvent.type,
+                symbol: lastEvent.symbol,
+                source: 'Chrome Extension',
+                message: lastEvent.message,
+                signal: lastEvent.signal
+              });
+            } catch (err) {
+              console.error('[Telemetry Sync Error]:', err);
+            }
+          }
+        }
+      },
       clearExtensionData: () => set({ extensionEvents: [], extensionStats: { chartChecks: 0, symbolSwitches: 0, postLossSpikes: 0 } }),
       startSession: (planId) => set((s) => {
         const today = new Date().toISOString().split('T')[0];

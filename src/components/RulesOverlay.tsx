@@ -12,14 +12,17 @@ export default function RulesOverlay() {
     // Check if rules have been read today
     const today = new Date().toISOString().split('T')[0];
     if (lastRulesReadDate !== today) {
-      setIsVisible(true);
-      
-      // Calculate required reading time based on user made entry
-      const totalWords = tradingRules.join(' ').split(/\s+/).length;
-      // Assume 150 words per minute reading speed to force them to read slowly and digest.
-      // E.g. 150 words = 60 seconds. Minimum 10 seconds.
-      const requiredSeconds = Math.max(10, Math.ceil((totalWords / 150) * 60));
-      setTimeLeft(requiredSeconds);
+      // Delay the popup by 5 seconds as requested
+      const popupTimeout = setTimeout(() => {
+        setIsVisible(true);
+        
+        // Calculate required reading time based on user rules
+        const totalWords = tradingRules.join(' ').split(/\s+/).length;
+        const requiredSeconds = Math.max(10, Math.ceil((totalWords / 150) * 60));
+        setTimeLeft(requiredSeconds);
+      }, 5000);
+
+      return () => clearTimeout(popupTimeout);
     }
   }, [lastRulesReadDate, tradingRules]);
 
