@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Settings, User, Bell, Shield, BookOpen, Plus, X, Save } from 'lucide-react';
+import { Settings, User, Bell, Shield, BookOpen, Plus, X, Save, Brain } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useAppStore } from '../store/appStore';
 import { toast } from 'sonner';
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
-  const { tradingRules, updateRules, markRulesRead, entryChecklistRules, updateEntryChecklistRules } = useAppStore();
+  const { tradingRules, updateRules, markRulesRead, entryChecklistRules, updateEntryChecklistRules, seedAllDemoData } = useAppStore();
   
   const [localRules, setLocalRules] = useState<string[]>([...tradingRules]);
   const [newRule, setNewRule] = useState('');
@@ -191,6 +191,21 @@ export default function SettingsPage() {
             ))}
           </div>
         </div>
+      </div>
+      {/* Developmental Utilities */}
+      <div className="card border-tv-blue/20 bg-tv-blue/5">
+        <h3 className="text-tv-blue font-bold flex items-center gap-2 mb-4">
+          <Brain className="w-5 h-5"/> Developer Utilities
+        </h3>
+        <p className="text-tv-muted text-sm mb-4 italic">
+          Generate 30 days of realistic behavioral data to demonstrate the AI Coach and Advanced Analytics.
+        </p>
+        <button 
+          onClick={seedAllDemoData} 
+          className="btn-primary bg-tv-blue hover:bg-tv-blue/80 text-sm px-6 glow-blue"
+        >
+          Seed Behavioral History
+        </button>
       </div>
     </div>
   );

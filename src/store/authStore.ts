@@ -11,6 +11,8 @@ export interface User {
   dailyLossLimit: number;
   tradingRules: string[];
   entryChecklistRules: string[];
+  isAdmin: boolean;
+  status: 'active' | 'suspended' | 'banned';
 }
 
 interface AuthState {
@@ -42,9 +44,10 @@ export const useAuthStore = create<AuthState>()(
       fetchProfile: async () => {
         try {
           const { data } = await api.get('/auth/profile');
+          console.log('[TradeGuru Auth] Profile Sync Success:', data);
           set({ user: data });
         } catch (err) {
-          console.error('Failed to sync profile', err);
+          console.error('[TradeGuru Auth] Profile Sync Failed:', err);
         }
       },
     }),

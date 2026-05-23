@@ -51,52 +51,52 @@ export interface SessionPlan {
   maxLoss: number;
   maxTrades: number;
   rules: string[];
-  notes: string;
+}
+
+export interface Asset {
+  id: string;
+  symbol: string;
+  name: string;
+  image: string;
+  coingeckoId: string;
+  rank?: number;
+  price?: number;
 }
 
 export interface ActiveSession {
-  id: string;
   planId: string;
   date: string;
-  startTime: string;
-  endTime?: string;
+  startTime: Date;
+  endTime?: Date;
+  reviewNotes?: string;
   startStatsSnapshot: {
     chartChecks: number;
     symbolSwitches: number;
     postLossSpikes: number;
   };
-  computedStats?: {
-    sessionChartChecks: number;
-    sessionSymbolSwitches: number;
-    sessionPostLossSpikes: number;
-    totalTrades: number;
-    winRate: number;
-    netPnl: number;
-    rulesViolatedCount: number;
-    disciplineScore: number;
-  };
-  reviewNotes?: string;
+  computedStats?: any;
 }
 
 interface AppState {
   checkins: DailyCheckin[];
   trades: Trade[];
+  assets: Asset[];
   sessionPlans: SessionPlan[];
   tradingRules: string[];
   entryChecklistRules: string[];
   lastRulesReadDate: string | null;
   todayCheckin: DailyCheckin | null;
   extensionInstalled: boolean;
-  extensionEvents: any[];
+  extensionData: any[];
   extensionStats: {
     chartChecks: number;
     symbolSwitches: number;
     postLossSpikes: number;
-    lastRefreshTime?: Record<string, number>;
   };
   activeSession: ActiveSession | null;
   pastSessions: ActiveSession[];
   fetchCheckins: () => Promise<void>;
+  fetchAssets: () => Promise<void>;
   addCheckin: (c: Omit<DailyCheckin, 'id'>) => Promise<void>;
   setTodayCheckin: (c: DailyCheckin | null) => void;
   addTrade: (t: Omit<Trade, 'id'>) => Promise<void>;
@@ -113,39 +113,37 @@ interface AppState {
   clearExtensionData: () => void;
   startSession: (planId: string) => void;
   endSession: (notes?: string) => void;
+  seedAllDemoData: () => void;
 }
-
-// Seed data for demo
-const DEMO_TRADES: Trade[] = [
-  { id:'t1', date:'2026-05-19', symbol:'BTC/USDT', direction:'long', entry:67200, exit:68900, sl:66500, tp:69500, riskPct:1.5, pnl:1700, timeframe:'4H', setupType:'Breakout', emotionBefore:'focused', emotionAfter:'calm', confidence:8, followedPlan:true, isImpulsive:false, lesson:'Held through noise', notes:'', tags:['crypto'] },
-  { id:'t2', date:'2026-05-18', symbol:'EUR/USD', direction:'short', entry:1.0850, exit:1.0800, sl:1.0880, tp:1.0780, riskPct:1.0, pnl:340, timeframe:'1H', setupType:'Rejection', emotionBefore:'calm', emotionAfter:'focused', confidence:7, followedPlan:true, isImpulsive:false, lesson:'Perfect entry', notes:'', tags:['forex'] },
-  { id:'t3', date:'2026-05-17', symbol:'NIFTY50', direction:'long', entry:23400, exit:23180, sl:23320, tp:23600, riskPct:2.0, pnl:-880, timeframe:'15M', setupType:'Momentum', emotionBefore:'frustrated', emotionAfter:'frustrated', confidence:4, followedPlan:false, isImpulsive:true, lesson:'Revenge trade after morning loss', notes:'', tags:['indices'] },
-  { id:'t4', date:'2026-05-16', symbol:'ETH/USDT', direction:'long', entry:3180, exit:3290, sl:3120, tp:3300, riskPct:1.5, pnl:660, timeframe:'4H', setupType:'Support bounce', emotionBefore:'calm', emotionAfter:'excited', confidence:8, followedPlan:true, isImpulsive:false, lesson:'', notes:'', tags:['crypto'] },
-  { id:'t5', date:'2026-05-15', symbol:'BTC/USDT', direction:'short', entry:66800, exit:66200, sl:67200, tp:65800, riskPct:1.0, pnl:400, timeframe:'1H', setupType:'Distribution', emotionBefore:'focused', emotionAfter:'calm', confidence:7, followedPlan:true, isImpulsive:false, lesson:'Good patience', notes:'', tags:['crypto'] },
-];
-
-const DEMO_CHECKINS: DailyCheckin[] = []; // Clear demo data for live sync
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set) => ({
-      checkins: DEMO_CHECKINS,
-      trades: DEMO_TRADES,
+    (set, get) => ({
+      checkins: [],
+      trades: [],
+      assets: [],
       sessionPlans: [],
       tradingRules: [],
       entryChecklistRules: [],
       lastRulesReadDate: null,
-      todayCheckin: DEMO_CHECKINS[0],
+      todayCheckin: null,
       extensionInstalled: false,
-      extensionEvents: [],
+      extensionData: [],
       extensionStats: { chartChecks: 0, symbolSwitches: 0, postLossSpikes: 0 },
       activeSession: null,
       pastSessions: [],
+      fetchAssets: async () => {
+        try {
+          const { data } = await api.get('/assets');
+          set({ assets: data });
+        } catch (err) {
+          console.error('Failed to fetch assets', err);
+        }
+      },
       fetchCheckins: async () => {
         try {
           const { data } = await api.get('/checkins');
           set({ checkins: data });
-          // Check if today's checkin exists
           const today = new Date().toISOString().split('T')[0];
           const todayC = data.find((c: DailyCheckin) => c.date === today);
           if (todayC) set({ todayCheckin: todayC });
@@ -165,28 +163,39 @@ export const useAppStore = create<AppState>()(
           toast.error('Failed to sync check-in.');
         }
       },
+      setTodayCheckin: (c) => set({ todayCheckin: c }),
       addTrade: async (t) => {
         try {
           const { data } = await api.post('/trades', t);
           set((s) => ({ trades: [data, ...s.trades] }));
-          toast.success('Trade logged to cloud! ☁️');
-        } catch (err: any) {
+          toast.success('Trade logged successfully! 📈');
+        } catch (err) {
           toast.error('Failed to save trade.');
         }
       },
       updateTrade: async (id, updates) => {
-        // Local update for now
-        set((s) => ({ trades: s.trades.map((t) => t.id === id ? { ...t, ...updates } : t) }));
+        try {
+          const { data } = await api.put(`/trades/${id}`, updates);
+          set((s) => ({ trades: s.trades.map(t => t.id === id ? data : t) }));
+          toast.success('Trade updated!');
+        } catch (err) {
+          toast.error('Update failed.');
+        }
       },
       deleteTrade: async (id) => {
-        // Local delete for now
-        set((s) => ({ trades: s.trades.filter((t) => t.id !== id) }));
+        try {
+          await api.delete(`/trades/${id}`);
+          set((s) => ({ trades: s.trades.filter(t => t.id !== id) }));
+          toast.success('Trade deleted.');
+        } catch (err) {
+          toast.error('Delete failed.');
+        }
       },
       fetchTrades: async () => {
         try {
           const { data } = await api.get('/trades');
           set({ trades: data });
-        } catch (err: any) {
+        } catch (err) {
           console.error('Failed to sync trades:', err);
         }
       },
@@ -211,95 +220,89 @@ export const useAppStore = create<AppState>()(
         if (isAuthenticated) await updateUser({ entryChecklistRules: rules });
       },
       markRulesRead: () => set({ lastRulesReadDate: new Date().toISOString().split('T')[0] }),
-      setTodayCheckin: (c) => set({ todayCheckin: c }),
       setExtensionInstalled: (installed) => set({ extensionInstalled: installed }),
-      setExtensionData: async (events, stats) => {
-        set({ extensionEvents: events, extensionStats: stats });
-        
-        // Sync new behavioral signals to backend if authenticated
-        const { isAuthenticated } = useAuthStore.getState();
-        if (isAuthenticated && events.length > 0) {
-          const lastEvent = events[events.length - 1];
-          // We only sync "signal" events (anxiety, fomo, etc) to keep the DB clean
-          if (lastEvent.signal !== 'calm') {
-            try {
-              await api.post('/telemetry/events', {
-                eventType: lastEvent.type,
-                symbol: lastEvent.symbol,
-                source: 'Chrome Extension',
-                message: lastEvent.message,
-                signal: lastEvent.signal
-              });
-            } catch (err) {
-              console.error('[Telemetry Sync Error]:', err);
-            }
-          }
-        }
+      setExtensionData: (events, stats) => set({ extensionData: events, extensionStats: stats }),
+      clearExtensionData: () => set({ extensionData: [], extensionStats: { chartChecks: 0, symbolSwitches: 0, postLossSpikes: 0 } }),
+      startSession: (planId) => {
+        const { extensionStats } = get();
+        set({ 
+          activeSession: { 
+            planId, 
+            date: new Date().toISOString().split('T')[0],
+            startTime: new Date(),
+            startStatsSnapshot: { ...extensionStats }
+          } 
+        });
       },
-      clearExtensionData: () => set({ extensionEvents: [], extensionStats: { chartChecks: 0, symbolSwitches: 0, postLossSpikes: 0 } }),
-      startSession: (planId) => set((s) => {
-        const today = new Date().toISOString().split('T')[0];
-        return {
-          activeSession: {
-            id: Date.now().toString(),
-            planId,
-            date: today,
-            startTime: new Date().toISOString(),
-            startStatsSnapshot: {
-              chartChecks: s.extensionStats.chartChecks || 0,
-              symbolSwitches: s.extensionStats.symbolSwitches || 0,
-              postLossSpikes: s.extensionStats.postLossSpikes || 0,
-            }
-          }
-        };
-      }),
       endSession: (notes) => set((s) => {
-        if (!s.activeSession) return {};
-        
-        const sessionTrades = s.trades.filter(t => t.date === s.activeSession!.date);
-        const totalTrades = sessionTrades.length;
-        const winningTrades = sessionTrades.filter(t => t.pnl > 0).length;
-        const winRate = totalTrades ? Math.round((winningTrades / totalTrades) * 100) : 0;
-        const netPnl = sessionTrades.reduce((acc, t) => acc + t.pnl, 0);
-        
-        const sessionChartChecks = Math.max(0, (s.extensionStats.chartChecks || 0) - s.activeSession.startStatsSnapshot.chartChecks);
-        const sessionSymbolSwitches = Math.max(0, (s.extensionStats.symbolSwitches || 0) - s.activeSession.startStatsSnapshot.symbolSwitches);
-        const sessionPostLossSpikes = Math.max(0, (s.extensionStats.postLossSpikes || 0) - s.activeSession.startStatsSnapshot.postLossSpikes);
-        
-        const rulesViolatedCount = sessionTrades.reduce((acc, t) => acc + (t.rulesViolated?.length || 0), 0);
-        const impulsiveCount = sessionTrades.filter(t => t.isImpulsive).length;
-        
-        let disciplineScore = 100;
-        if (totalTrades > 0) {
-          disciplineScore -= (rulesViolatedCount * 15);
-          disciplineScore -= (impulsiveCount * 25);
-          if (sessionChartChecks > 30) disciplineScore -= 10;
-          if (sessionSymbolSwitches > 10) disciplineScore -= 10;
-          disciplineScore = Math.max(0, Math.min(100, disciplineScore));
-        }
-
-        const completedSession: ActiveSession = {
-          ...s.activeSession,
-          endTime: new Date().toISOString(),
-          computedStats: {
-            sessionChartChecks,
-            sessionSymbolSwitches,
-            sessionPostLossSpikes,
-            totalTrades,
-            winRate,
-            netPnl,
-            rulesViolatedCount,
-            disciplineScore
-          },
-          reviewNotes: notes || ''
-        };
-
+        if (!s.activeSession) return s;
         return {
           activeSession: null,
-          pastSessions: [completedSession, ...s.pastSessions]
+          pastSessions: [{ ...s.activeSession, endTime: new Date(), reviewNotes: notes || '' }, ...s.pastSessions]
         };
       }),
+      seedAllDemoData: () => {
+        const trades: Trade[] = [];
+        const checkins: DailyCheckin[] = [];
+        const symbols = ['BTC/USDT', 'ETH/USDT', 'EUR/USD', 'GBP/USD', 'GOLD', 'NAS100'];
+        
+        for (let i = 30; i >= 0; i--) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          const dateStr = date.toISOString().split('T')[0];
+          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+          
+          const sleep = isWeekend ? 8 : 6 + Math.random() * 2;
+          const stress = isWeekend ? 2 : Math.floor(Math.random() * 6) + 2;
+          const checkin: DailyCheckin = {
+            id: `c-${i}`,
+            date: dateStr,
+            emotionBefore: sleep > 7 ? 'focused' : 'frustrated',
+            sleepHours: sleep,
+            stressLevel: stress,
+            energyLevel: sleep > 7 ? 8 : 5,
+            reviewedSetups: true,
+            maxRiskToday: 1.0,
+            maxTradesToday: 5,
+            hasRevengeMindset: stress > 6,
+            emotionalRisk: stress > 6 ? 'Feeling impulsive' : 'Clear mind'
+          };
+          checkins.push(checkin);
+
+          if (!isWeekend || Math.random() > 0.8) {
+            const count = Math.floor(Math.random() * 3) + 1;
+            for (let j = 0; j < count; j++) {
+              const isWin = Math.random() > 0.45;
+              const risk = 100 + Math.random() * 200;
+              trades.push({
+                id: `t-${i}-${j}`,
+                date: dateStr,
+                symbol: symbols[Math.floor(Math.random() * symbols.length)],
+                direction: Math.random() > 0.5 ? 'long' : 'short',
+                entry: 50000,
+                exit: isWin ? 51500 : 49000,
+                sl: 49000,
+                tp: 52000,
+                riskPct: 1.0,
+                pnl: isWin ? risk * 1.5 : -risk,
+                timeframe: '1H',
+                setupType: 'Trend Following',
+                emotionBefore: checkin.emotionBefore,
+                emotionAfter: isWin ? 'excited' : 'frustrated',
+                confidence: 8,
+                followedPlan: stress < 6,
+                isImpulsive: stress > 7,
+                lesson: 'Stick to rules',
+                notes: 'Seeded trade',
+                tags: ['seeded']
+              });
+            }
+          }
+        }
+        set({ trades, checkins, todayCheckin: checkins[checkins.length-1] });
+        toast.success('30 days of behavioral data seeded locally! 🧬');
+      }
     }),
-    { name: 'tradeguru-data' }
+    { name: 'tradeguru-app-storage' }
   )
 );

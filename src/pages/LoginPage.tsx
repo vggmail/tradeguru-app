@@ -21,19 +21,10 @@ export default function LoginPage() {
     if (typeof (window as any).google !== 'undefined') {
       const google = (window as any).google;
 
-      google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleCallback,
-        auto_select: true
-      });
-
       google.accounts.id.renderButton(
         document.getElementById("googleSignInDiv"),
         { theme: "filled_blue", size: "large", width: "100%", shape: "rectangular" }
       );
-
-      // Display One Tap prompt
-      google.accounts.id.prompt();
     }
   }, [mode]);
 
@@ -41,7 +32,6 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const { data } = await api.post('/auth/google', { credential: response.credential });
-
       login(
         {
           id: data.user.id,
@@ -51,11 +41,12 @@ export default function LoginPage() {
           marketFocus: data.user.marketFocus,
           dailyLossLimit: data.user.dailyLossLimit,
           tradingRules: data.user.tradingRules || [],
-          entryChecklistRules: data.user.entryChecklistRules || []
+          entryChecklistRules: data.user.entryChecklistRules || [],
+          isAdmin: data.user.isAdmin,
+          status: data.user.status,
         },
         data.token
       );
-
       toast.success('Signed in with Google! 🚀');
       navigate('/app/dashboard');
     } catch (err: any) {
@@ -85,7 +76,9 @@ export default function LoginPage() {
           marketFocus: data.user.marketFocus,
           dailyLossLimit: data.user.dailyLossLimit,
           tradingRules: data.user.tradingRules || [],
-          entryChecklistRules: data.user.entryChecklistRules || []
+          entryChecklistRules: data.user.entryChecklistRules || [],
+          isAdmin: data.user.isAdmin,
+          status: data.user.status,
         },
         data.token
       );
@@ -110,7 +103,9 @@ export default function LoginPage() {
         marketFocus: ['Crypto', 'Forex', 'Indices'],
         dailyLossLimit: 1000,
         tradingRules: ['No trading after 3 losses', 'Wait for 15m confirmation'],
-        entryChecklistRules: ['Trend aligned', 'R:R > 2']
+        entryChecklistRules: ['Trend aligned', 'R:R > 2'],
+        isAdmin: true,
+        status: 'active'
       },
       'demo-token'
     );

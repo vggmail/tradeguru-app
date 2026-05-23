@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Brain, ClipboardList, TrendingUp,
-  BarChart2, Settings, LogOut, Activity, Zap, Moon, Sun,
+  BarChart2, Settings, LogOut, Activity, Zap, Moon, Sun, ShieldCheck
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore } from '../../store/themeStore';
@@ -64,8 +64,16 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Bottom: user + logout */}
       <div className="px-3 pb-4 border-t border-tv-border pt-3 space-y-0.5">
+        {(user?.isAdmin === true || (user as any)?.isAdmin === 1) && (
+          <NavLink to="/admin/dashboard" className={({ isActive }) =>
+            cn('flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 bg-tv-blue/5 border border-tv-blue/10 mb-2',
+              isActive ? 'bg-tv-blue/15 text-tv-blue' : 'text-tv-blue hover:bg-tv-blue/10')
+          }>
+            <ShieldCheck className="w-4 h-4" />
+            Admin Panel
+          </NavLink>
+        )}
         <NavLink to="/app/settings" className={({ isActive }) =>
           cn('flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
             isActive ? 'bg-tv-blue/15 text-tv-blue' : 'text-tv-muted hover:bg-tv-hover hover:text-tv-text')

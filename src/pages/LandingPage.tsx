@@ -1,7 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Zap, ArrowRight, Brain, Activity, BarChart2, Shield, Monitor, Eye, Star, Check, Moon, Sun } from 'lucide-react';
 import { useThemeStore } from '../store/themeStore';
+import { useAuthStore } from '../store/authStore';
+import { toast } from 'sonner';
+import api from '../api/client';
+
+const GOOGLE_CLIENT_ID = "440039434568-p7k6oq8p78sqi52or6j5rtpjq5m4qv41.apps.googleusercontent.com";
 
 const FEATURES = [
   { icon: Brain, title: 'Mental Check-In', color: '#2962ff', desc: 'Pre-session emotional state tracking: sleep, stress, revenge mindset, max risk. The ritual that changes everything.' },
@@ -27,6 +32,8 @@ const PLANS = [
 export default function LandingPage() {
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useThemeStore();
+  const login = useAuthStore(s => s.login);
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const [email, setEmail] = useState('');
   const [joined, setJoined] = useState(false);
 

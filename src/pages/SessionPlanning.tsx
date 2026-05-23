@@ -30,7 +30,7 @@ export default function SessionPlanning() {
       markets, rules, ...form,
       maxLoss: Number(form.maxLoss),
       maxTrades: Number(form.maxTrades),
-    } as SessionPlan);
+    });
     toast.success('Session plan saved! 📋');
     setShowForm(false);
   };

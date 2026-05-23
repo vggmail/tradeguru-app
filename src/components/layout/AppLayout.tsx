@@ -4,12 +4,15 @@ import Sidebar from './Sidebar';
 import { Toaster, toast } from 'sonner';
 import RulesOverlay from '../RulesOverlay';
 import { useAppStore } from '../../store/appStore';
+import { useAuthStore } from '../../store/authStore';
 
 export default function AppLayout() {
   const { setExtensionInstalled, setExtensionData, clearExtensionData, fetchTrades, fetchCheckins, syncRules } = useAppStore();
+  const fetchProfile = useAuthStore(s => s.fetchProfile);
 
   useEffect(() => {
     // Sync historical data from DB
+    fetchProfile();
     fetchTrades();
     fetchCheckins();
     syncRules();

@@ -28,7 +28,7 @@ export function computeBehavioralScores(trades: Trade[], checkins: DailyCheckin[
   let riskViolations = 0;
   trades.forEach(t => {
     const dailyCheckin = checkins.find(c => c.date === t.date);
-    if (dailyCheckin && t.riskPct > dailyCheckin.maxRisk) {
+    if (dailyCheckin && t.riskPct > dailyCheckin.maxRiskToday) {
       riskViolations++;
     }
   });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore, Trade } from '../store/appStore';
 import { emotionLabel, formatCurrency, cn } from '../lib/utils';
@@ -11,10 +11,14 @@ const SETUPS = ['Breakout','Pullback','Rejection','Support bounce','Momentum','R
 const TIMEFRAMES = ['1M','5M','15M','1H','4H','1D','1W'];
 
 export default function TradeJournal() {
-  const { trades } = useAppStore();
+  const { trades, assets, fetchAssets } = useAppStore();
   const navigate = useNavigate();
   const [showImport, setShowImport] = useState(false);
   const [filter, setFilter] = useState<'all'|'wins'|'losses'|'impulsive'>('all');
+
+  useEffect(() => {
+    if (assets.length === 0) fetchAssets();
+  }, [assets.length, fetchAssets]);
 
   const filtered = trades.filter(t => {
     if(filter==='wins') return t.pnl>0;
@@ -74,7 +78,13 @@ export default function TradeJournal() {
             <div key={t.id} className="card hover:border-tv-blue/30 transition-all duration-200">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3 flex-wrap">
-                  <span className="font-bold text-tv-text">{t.symbol}</span>
+                  <div className="flex items-center gap-2">
+                    {(() => {
+                      const asset = assets.find(a => a.symbol === t.symbol);
+                      return asset && <img src={asset.image} className="w-5 h-5 rounded-full" alt="" />;
+                    })()}
+                    <span className="font-bold text-tv-text">{t.symbol}</span>
+                  </div>
                   <span className={cn('badge-'+(t.direction==='long'?'green':'red'))}>
                     {t.direction==='long'?<TrendingUp className="w-3 h-3"/>:<TrendingDown className="w-3 h-3"/>}
                     {t.direction.toUpperCase()}

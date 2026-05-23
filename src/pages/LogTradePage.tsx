@@ -4,6 +4,7 @@ import { useAppStore, Trade } from '../store/appStore';
 import { emotionLabel, formatCurrency, cn } from '../lib/utils';
 import { TrendingUp, TrendingDown, Check, AlertTriangle, ArrowLeft, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import AssetSelector from '../components/AssetSelector';
 
 const EMOTIONS = ['calm','focused','frustrated','fearful','revenge','fomo','excited','impulsive'];
 const SETUPS = ['Breakout','Pullback','Rejection','Support bounce','Momentum','Range','Pattern','Other'];
@@ -133,12 +134,9 @@ export default function LogTradePage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div className="col-span-2 sm:col-span-1">
                 <label className="label">Symbol *</label>
-                <input 
-                  className="input mt-1" 
-                  placeholder="BTC/USDT" 
+                <AssetSelector 
                   value={form.symbol} 
-                  onChange={e => setForm(p => ({ ...p, symbol: e.target.value }))} 
-                  required
+                  onChange={val => setForm(p => ({ ...p, symbol: val }))} 
                 />
               </div>
 

@@ -5,6 +5,7 @@ import ScoreRing from '../components/ui/ScoreRing';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
   RadarChart, PolarGrid, PolarAngleAxis, Radar, PieChart, Pie, Cell, Legend,
+  AreaChart, Area,
 } from 'recharts';
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -43,6 +44,66 @@ export default function Analytics() {
 
   const { discipline, emotion, process } = computeBehavioralScores(trades, checkins);
 
+  // 1. Equity Curve Calculation
+  let cumulative = 0;
+  const equityData = trades
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .map(t => {
+      cumulative += t.pnl;
+      return { date: t.date.slice(5), equity: cumulative };
+    });
+
+  // 2. Dynamic Sleep Correlation
+  const sleepStats = [
+    { label: 'Well Rested (7h+)', filter: (c: any) => c.sleepHours >= 7 },
+    { label: 'Sleep Deprived (<7h)', filter: (c: any) => c.sleepHours < 7 },
+  ].map(group => {
+    const dates = checkins.filter(group.filter).map(c => c.date);
+    const ts = trades.filter(t => dates.includes(t.date));
+    const wins = ts.filter(t => t.pnl > 0).length;
+    return { name: group.label, winRate: ts.length ? Math.round(wins/ts.length*100) : 0, count: ts.length };
+  });
+
+  // 3. Dynamic Insights Generation
+  const dynamicInsights = [];
+  
+  // Stress vs Winflow
+  const lowStressDates = checkins.filter(c => c.stressLevel <= 4).map(c => c.date);
+  const highStressDates = checkins.filter(c => c.stressLevel > 6).map(c => c.date);
+  const lowStressWR = trades.filter(t => lowStressDates.includes(t.date)).length > 0
+    ? Math.round(trades.filter(t => lowStressDates.includes(t.date) && t.pnl > 0).length / trades.filter(t => lowStressDates.includes(t.date)).length * 100)
+    : 0;
+  const highStressWR = trades.filter(t => highStressDates.includes(t.date)).length > 0
+    ? Math.round(trades.filter(t => highStressDates.includes(t.date) && t.pnl > 0).length / trades.filter(t => highStressDates.includes(t.date)).length * 100)
+    : 0;
+
+  if (lowStressWR > highStressWR + 5) {
+    dynamicInsights.push({ 
+      emoji: '🧘', title: 'Stress Impact', 
+      desc: `Your Win Rate is ${lowStressWR}% when calm, but drops to ${highStressWR}% when stressed.`, 
+      color: '#ef5350' 
+    });
+  }
+
+  // Revenge Pattern
+  const revengeSess = checkins.filter(c => c.hasRevengeMindset).length;
+  if (revengeSess > 0) {
+    dynamicInsights.push({ 
+      emoji: '🔁', title: 'Revenge Loop detected', 
+      desc: `You've traded ${revengeSess} sessions with a revenge mindset. This is your #1 profit killer.`, 
+      color: '#ff9800' 
+    });
+  }
+  
+  // Sleep Insight
+  if (sleepStats[0].winRate > sleepStats[1].winRate) {
+    dynamicInsights.push({
+      emoji: '😴', title: 'Sleep Performance',
+      desc: `You win ${sleepStats[0].winRate}% of trades after 7h+ sleep, compared to only ${sleepStats[1].winRate}% when tired.`,
+      color: '#26a69a'
+    });
+  }
+
   // Radar data for scores
   const radarData = [
     { subject: 'Discipline', A: discipline },
@@ -51,13 +112,6 @@ export default function Analytics() {
     { subject: 'Risk Mgmt', A: Math.round((discipline + process) / 2) },
     { subject: 'Consistency', A: 75 },
     { subject: 'Patience', A: 69 },
-  ];
-
-  const insights = [
-    { emoji: '😤', title: 'Frustration → Risk Spike', desc: 'Your risk increases 2.8× after frustrated sessions. 3 of 4 such trades were losers.', color: '#ef5350' },
-    { emoji: '🌙', title: 'Late-Night Decay', desc: 'Win rate drops from 68% → 29% after 10 PM. Avoid trading after market hours.', color: '#f7b500' },
-    { emoji: '😴', title: 'Sleep Correlation', desc: 'Sessions after 7h+ sleep: 71% win rate. Under 5h: 38% win rate.', color: '#26a69a' },
-    { emoji: '🔁', title: 'Revenge Loop Pattern', desc: 'You over-trade after 2 consecutive losses. Consider a mandatory 30-min break rule.', color: '#ff9800' },
   ];
 
   return (
@@ -76,6 +130,31 @@ export default function Analytics() {
           <ScoreRing score={process} label="Process Score" sublabel="Checklist completion"/>
           <ScoreRing score={Math.round((discipline + process) / 2)} label="Risk Management" sublabel="Position sizing"/>
         </div>
+      </div>
+
+      {/* Total Equity Curve */}
+      <div className="card">
+        <div className="flex justify-between items-center mb-4">
+          <div className="section-title">Growth Curve (Cumulative p&l)</div>
+          <div className={`font-bold ${cumulative >= 0 ? 'text-tv-green' : 'text-tv-red'}`}>
+            {cumulative >= 0 ? '+' : ''}{formatCurrency(cumulative)} Total
+          </div>
+        </div>
+        <ResponsiveContainer width="100%" height={300}>
+          <AreaChart data={equityData}>
+            <defs>
+              <linearGradient id="colorEquity" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={cumulative >= 0 ? '#26a69a' : '#ef5350'} stopOpacity={0.2}/>
+                <stop offset="95%" stopColor={cumulative >= 0 ? '#26a69a' : '#ef5350'} stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--tv-chart-grid))" vertical={false}/>
+            <XAxis dataKey="date" tick={{fill:'rgb(var(--tv-chart-label))',fontSize:10}} axisLine={false} tickLine={false}/>
+            <YAxis tick={{fill:'rgb(var(--tv-chart-label))',fontSize:10}} axisLine={false} tickLine={false} tickFormatter={(v)=>formatCurrency(v)}/>
+            <Tooltip content={<CustomTooltip/>}/>
+            <Area type="monotone" dataKey="equity" stroke={cumulative >= 0 ? '#26a69a' : '#ef5350'} fillOpacity={1} fill="url(#colorEquity)" strokeWidth={2}/>
+          </AreaChart>
+        </ResponsiveContainer>
       </div>
 
       {/* Charts row */}
@@ -144,20 +223,29 @@ export default function Analytics() {
       </div>
 
       {/* AI Behavioral Insights */}
-      <div className="card">
-        <div className="section-title mb-4">🤖 AI Behavioral Coach — Key Insights</div>
-        <div className="grid sm:grid-cols-2 gap-4">
-          {insights.map(ins=>(
-            <div key={ins.title} className="p-4 bg-tv-surface2 rounded-xl border border-tv-border hover:border-tv-blue/30 transition-colors">
-              <div className="flex items-start gap-3">
-                <span className="text-2xl">{ins.emoji}</span>
-                <div>
-                  <div className="font-semibold text-sm mb-1" style={{color:ins.color}}>{ins.title}</div>
-                  <div className="text-tv-muted text-xs leading-relaxed">{ins.desc}</div>
+      <div className="card border-l-4 border-l-tv-blue">
+        <div className="section-title mb-4 flex items-center gap-2">
+          <span className="w-8 h-8 rounded-full bg-tv-blue/10 flex items-center justify-center">🤖</span> 
+          AI Behavioral Coach — Real-time Correlation Analysis
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {dynamicInsights.length > 0 ? (
+            dynamicInsights.map(ins=>(
+              <div key={ins.title} className="p-4 bg-tv-surface2 rounded-xl border border-tv-border hover:border-tv-blue/30 transition-all hover:scale-[1.02]">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">{ins.emoji}</span>
+                  <div>
+                    <div className="font-semibold text-sm mb-1" style={{color:ins.color}}>{ins.title}</div>
+                    <div className="text-tv-muted text-xs leading-relaxed">{ins.desc}</div>
+                  </div>
                 </div>
               </div>
+            ))
+          ) : (
+            <div className="col-span-full p-8 text-center text-tv-muted italic">
+              Collecting more behavioral data to generate AI insights...
             </div>
-          ))}
+          )}
         </div>
       </div>
 

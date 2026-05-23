@@ -4,7 +4,7 @@ import { useAppStore } from '../store/appStore';
 import api from '../api/client';
 
 export default function BehaviorPage() {
-  const { extensionInstalled, extensionEvents, extensionStats, trades } = useAppStore();
+  const { extensionInstalled, extensionData: extensionEvents = [], extensionStats, trades } = useAppStore();
   const [dbEvents, setDbEvents] = useState<any[]>([]);
 
   useEffect(() => {
@@ -20,14 +20,10 @@ export default function BehaviorPage() {
   }, []);
 
   // Merge events: Preference to local live events, but show history from DB
-  const allEvents = [...extensionEvents];
-  dbEvents.forEach(dbE => {
-    // Basic de-duplication or just merge
+  const allEvents = [...(extensionEvents || [])];
+  (dbEvents || []).forEach(dbE => {
     if (!allEvents.some(e => e.timestamp === dbE.timestamp && e.type === dbE.eventType)) {
-      allEvents.push({
-        ...dbE,
-        type: dbE.eventType, // Map backend field to frontend prop
-      });
+      allEvents.push({ ...dbE, type: dbE.eventType });
     }
   });
 
@@ -42,14 +38,14 @@ export default function BehaviorPage() {
   // Compile real events or fallback
   const checksToday = extensionInstalled ? extensionStats.chartChecks : 63;
   const switchesToday = extensionInstalled ? extensionStats.symbolSwitches : 18;
-  const lateNightEvents = extensionEvents.filter(e => e.type === 'late_night');
+  const lateNightEvents = (extensionEvents || []).filter(e => e.type === 'late_night');
   const lateNightCount = extensionInstalled ? lateNightEvents.length : 2;
 
   // Process live alerts
   let liveAlerts: { text: string; color: string; icon: any }[] = [];
   if (extensionInstalled) {
-    const compulsiveChecks = extensionEvents.filter(e => e.type === 'compulsive_check');
-    const compulsiveRefreshes = extensionEvents.filter(e => e.type === 'compulsive_refresh');
+    const compulsiveChecks = (extensionEvents || []).filter(e => e.type === 'compulsive_check');
+    const compulsiveRefreshes = (extensionEvents || []).filter(e => e.type === 'compulsive_refresh');
     
     compulsiveChecks.slice(-2).forEach(c => {
       liveAlerts.push({
@@ -95,9 +91,9 @@ export default function BehaviorPage() {
 
   // Process most monitored assets
   let monitoredAssets: { symbol: string; checks: number; pct: number; color: string }[] = [];
-  if (extensionInstalled && extensionEvents.length > 0) {
+  if (extensionInstalled && (extensionEvents || []).length > 0) {
     const counts: Record<string, number> = {};
-    extensionEvents.forEach(e => {
+    (extensionEvents || []).forEach(e => {
       if (e.symbol && e.symbol !== 'UNKNOWN' && e.symbol !== 'N/A') {
         counts[e.symbol] = (counts[e.symbol] || 0) + 1;
       }
