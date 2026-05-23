@@ -1,14 +1,10 @@
 import { ReactNode, useEffect } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, ShieldAlert, BarChart3, LogOut, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { useNavigate, Link, useLocation, Outlet } from 'react-router-dom';
+import { LayoutDashboard, Users, ShieldAlert, BarChart3, LogOut, ArrowLeft, ShieldCheck, Shield } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { cn } from '../lib/utils';
 
-interface AdminLayoutProps {
-  children: ReactNode;
-}
-
-export default function AdminLayout({ children }: AdminLayoutProps) {
+export default function AdminLayout() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,10 +18,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   if (!user?.isAdmin) return null;
 
   const menuItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
-    { label: 'User Management', icon: Users, path: '/admin/users' },
-    { label: 'Behavioral Audit', icon: ShieldAlert, path: '/admin/audit' },
-    { label: 'Platform Stats', icon: BarChart3, path: '/admin/stats' },
+    { label: 'Dashboard',         icon: LayoutDashboard, path: '/admin/dashboard' },
+    { label: 'User Management',   icon: Users,           path: '/admin/users' },
+    { label: 'Behavioral Rules',  icon: Shield,          path: '/admin/rules' },
+    { label: 'Behavioral Audit',  icon: ShieldAlert,     path: '/admin/audit' },
+    { label: 'Platform Stats',    icon: BarChart3,       path: '/admin/stats' },
   ];
 
   return (
@@ -91,7 +88,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </header>
 
         <div className="p-8">
-          {children}
+          <Outlet />
         </div>
       </main>
     </div>

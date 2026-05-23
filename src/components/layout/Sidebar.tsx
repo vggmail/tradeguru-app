@@ -32,8 +32,8 @@ export default function Sidebar() {
     <aside className="w-64 flex-shrink-0 bg-tv-surface border-r border-tv-border flex flex-col h-screen sticky top-0">
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-tv-border">
-        <div className="w-9 h-9 rounded-lg bg-tv-blue flex items-center justify-center glow-blue">
-          <Zap className="w-5 h-5 text-white" />
+        <div className="w-9 h-9 flex items-center justify-center rounded-lg overflow-hidden bg-transparent">
+          <img src="/logo.png" alt="TradeGuru Logo" className="w-full h-full object-contain" />
         </div>
         <div>
           <div className="font-bold text-tv-text text-base leading-none">TradeGuru</div>

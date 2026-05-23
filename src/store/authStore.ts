@@ -13,6 +13,17 @@ export interface User {
   entryChecklistRules: string[];
   isAdmin: boolean;
   status: 'active' | 'suspended' | 'banned';
+  behaviorRules?: {
+    maxSessionHours?: number;
+    forcedBreakMins?: number;
+    maxSymbolHops?: number;
+    maxDwellMins?: number;
+    maxRefreshPerHour?: number;
+    maxTradesPerDay?: number;
+    postLossCooldownMins?: number;
+    maxConsecutiveLosses?: number;
+    tiltLockUntil?: number; // timestamp
+  };
 }
 
 interface AuthState {

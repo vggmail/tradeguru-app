@@ -19,6 +19,7 @@ import { useEffect, useRef } from 'react';
 import AdminLayout from './admin/AdminLayout';
 import AdminDashboard from './admin/AdminDashboard';
 import AdminUsers from './admin/AdminUsers';
+import AdminRules from './admin/AdminRules';
 
 const queryClient = new QueryClient();
 
@@ -40,7 +41,14 @@ export default function App() {
   }, [initTheme]);
 
   useEffect(() => {
-    if (initialized.current || isAuthenticated) return;
+    if (isAuthenticated) {
+      if ((window as any).google?.accounts?.id) {
+        (window as any).google.accounts.id.cancel();
+      }
+      return;
+    }
+
+    if (initialized.current) return;
     
     /* global google */
     const setupGoogle = () => {
@@ -81,7 +89,7 @@ export default function App() {
     return () => {
       if ((window as any).google?.accounts?.id) (window as any).google.accounts.id.cancel();
     };
-  }, [login]);
+  }, [login, isAuthenticated]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -109,12 +117,11 @@ export default function App() {
 
           {/* Admin Routes */}
           {user?.isAdmin && (
-            <Route path="/admin" element={<AdminLayout><Navigate to="dashboard" replace /></AdminLayout>} />
-          )}
-          {user?.isAdmin && (
-            <Route path="/admin" element={<AdminLayout children={undefined} />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="users" element={<AdminUsers />} />
+              <Route path="rules" element={<AdminRules />} />
               <Route path="audit" element={<div className="p-12 text-center text-tv-muted font-mono tracking-widest uppercase">Behavioral Audit Module [ENCRYPTED]</div>} />
               <Route path="stats" element={<div className="p-12 text-center text-tv-muted font-mono tracking-widest uppercase">Deep Analytics Engine [PROCESSING]</div>} />
             </Route>

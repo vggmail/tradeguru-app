@@ -48,8 +48,8 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 border-b border-tv-border bg-tv-bg/95 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-tv-blue rounded-lg flex items-center justify-center">
-              <Zap className="w-5 h-5 text-white" />
+            <div className="w-8 h-8 flex items-center justify-center overflow-hidden bg-transparent">
+              <img src="/logo.png" alt="TradeGuru Logo" className="w-full h-full object-contain" />
             </div>
             <span className="font-bold text-tv-text text-lg">TradeGuru</span>
             <span className="hidden sm:inline-flex badge-blue ml-2">Beta</span>

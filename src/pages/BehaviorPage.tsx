@@ -63,6 +63,14 @@ export default function BehaviorPage() {
       });
     });
 
+    (extensionEvents || []).filter(e => ['hover_anxiety', 'analysis_paralysis', 'rule_broken'].includes(e.type)).slice(-3).forEach(e => {
+      liveAlerts.push({
+        text: e.message,
+        color: e.type === 'rule_broken' ? '#f44336' : (e.type === 'hover_anxiety' ? '#ffeb3b' : '#03a9f4'),
+        icon: AlertTriangle
+      });
+    });
+
     lateNightEvents.forEach(l => {
       liveAlerts.push({
         text: l.message,
@@ -91,9 +99,9 @@ export default function BehaviorPage() {
 
   // Process most monitored assets
   let monitoredAssets: { symbol: string; checks: number; pct: number; color: string }[] = [];
-  if (extensionInstalled && (extensionEvents || []).length > 0) {
+  if (extensionInstalled && (allEvents || []).length > 0) {
     const counts: Record<string, number> = {};
-    (extensionEvents || []).forEach(e => {
+    (allEvents || []).forEach(e => {
       if (e.symbol && e.symbol !== 'UNKNOWN' && e.symbol !== 'N/A') {
         counts[e.symbol] = (counts[e.symbol] || 0) + 1;
       }
@@ -120,8 +128,8 @@ export default function BehaviorPage() {
 
   // Compile timeline items
   const timelineItems = sortedEvents
-    .filter(e => ['symbol_switch', 'compulsive_check', 'compulsive_refresh', 'late_night', 'symbol_view'].includes(e.type))
-    .slice(0, 10)
+    .filter(e => ['symbol_switch', 'compulsive_check', 'compulsive_refresh', 'late_night', 'symbol_view', 'hover_anxiety', 'analysis_paralysis', 'rule_broken'].includes(e.type))
+    .slice(0, 50)
     .map(e => {
       const timeStr = new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const good = e.signal === 'calm' || e.signal === 'focused';
@@ -194,32 +202,21 @@ export default function BehaviorPage() {
               </div>
             </div>
 
-            {/* Instruction manual */}
-            <div className="mt-5 p-4 bg-tv-surface rounded-xl border border-tv-border space-y-3">
+            {/* Instruction manual / Web store install */}
+            <div className="mt-5 p-4 bg-tv-surface rounded-xl border border-tv-border space-y-4">
               <div className="text-xs font-bold text-tv-text flex items-center gap-1.5">
                 <Info className="w-4 h-4 text-tv-blue" />
-                How to install Chrome Extension locally:
+                Available on the Chrome Web Store
               </div>
-              <ol className="text-xs text-tv-muted space-y-2 list-decimal pl-4">
-                <li>
-                  Open your Chrome browser and type <code className="bg-tv-surface2 text-tv-blue px-1.5 py-0.5 rounded border border-tv-border">chrome://extensions/</code> in the URL bar.
-                </li>
-                <li>
-                  Turn on <strong className="text-tv-text">Developer Mode</strong> in the top-right corner.
-                </li>
-                <li>
-                  Click <strong className="text-tv-text">Load unpacked</strong> in the top-left corner.
-                </li>
-                <li>
-                  Select the extension folder located at:<br/>
-                  <code className="block mt-1 bg-tv-surface2 text-tv-text/80 p-2 rounded border border-tv-border font-mono select-all overflow-x-auto text-[10px]">
-                    d:\projects\tradeguru\tradeguru-extension
-                  </code>
-                </li>
-                <li>
-                  Open <a href="https://tradingview.com" target="_blank" rel="noopener noreferrer" className="text-tv-blue underline">TradingView</a>, <a href="https://binance.com" target="_blank" rel="noopener noreferrer" className="text-tv-blue underline">Binance</a>, <a href="https://xm.com" target="_blank" rel="noopener noreferrer" className="text-tv-blue underline">XM</a>, or <a href="https://exness.com" target="_blank" rel="noopener noreferrer" className="text-tv-blue underline">Exness</a>, switch symbols, and watch your attention patterns synchronize here instantly!
-                </li>
-              </ol>
+              <div className="text-xs text-tv-muted">
+                Install our official extension to instantly connect your broker platforms and TradingView to your Behavioral OS.
+              </div>
+              <button 
+                onClick={() => window.open('https://chrome.google.com/webstore/detail/your-extension-id-here', '_blank')}
+                className="btn-primary w-full sm:w-auto flex justify-center text-sm"
+              >
+                Install TradeGuru Extension
+              </button>
             </div>
           </div>
         </div>

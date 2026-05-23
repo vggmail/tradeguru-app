@@ -122,8 +122,8 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <button onClick={() => navigate('/')} className="inline-flex items-center gap-3 group">
-            <div className="w-12 h-12 bg-tv-blue rounded-xl flex items-center justify-center glow-blue">
-              <Zap className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 flex items-center justify-center rounded-xl overflow-hidden bg-transparent">
+              <img src="/logo.png" alt="TradeGuru Logo" className="w-full h-full object-contain" />
             </div>
             <div className="text-left">
               <div className="font-bold text-tv-text text-xl">TradeGuru</div>
