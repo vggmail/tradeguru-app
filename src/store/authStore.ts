@@ -28,9 +28,8 @@ export interface User {
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
-  login: (user: User, token: string) => void;
+  login: (user: User) => void;
   logout: () => void;
   updateUser: (partial: Partial<User>) => Promise<void>;
   fetchProfile: () => Promise<void>;
@@ -40,10 +39,13 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      token: null,
       isAuthenticated: false,
-      login: (user, token) => set({ user, token, isAuthenticated: true }),
-      logout: () => set({ user: null, token: null, isAuthenticated: false }),
+      login: (user) => set({ user, isAuthenticated: true }),
+      logout: () => {
+        // Clear cookie by calling a logout endpoint or letting frontend clear state
+        // For HttpOnly, we should theoretically call API, but clearing state is enough to require new login
+        set({ user: null, isAuthenticated: false });
+      },
       updateUser: async (partial) => {
         try {
           const { data } = await api.put('/auth/profile', partial);
@@ -59,9 +61,14 @@ export const useAuthStore = create<AuthState>()(
           set({ user: data });
         } catch (err) {
           console.error('[TradeGuru Auth] Profile Sync Failed:', err);
+          set({ user: null, isAuthenticated: false }); // Logout if profile fetch fails (e.g. cookie expired)
         }
       },
     }),
-    { name: 'tradeguru-auth' }
+    { 
+      name: 'tradeguru-auth',
+      // Only keep user and isAuthenticated in localStorage, no tokens!
+      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated })
+    }
   )
 );

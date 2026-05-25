@@ -90,7 +90,7 @@ export default function Dashboard() {
             <div>
               <div className="text-tv-text font-semibold text-sm">Today's check-in complete</div>
               <div className="text-tv-muted text-xs">
-                {emotionLabel(todayCheckin.emotionBefore).label} · Sleep {todayCheckin.sleepHours}/10 · Stress {todayCheckin.stressLevel}/10
+                {emotionLabel(todayCheckin.emotionBefore).label} · Sleep {Number(todayCheckin.sleepHours).toFixed(2)}/10 · Stress {todayCheckin.stressLevel}/10
                 {todayCheckin.hasRevengeMindset && <span className="text-tv-red ml-2">⚠ Revenge mindset detected</span>}
               </div>
             </div>

@@ -254,7 +254,12 @@ export default function Analytics() {
         <div className="card border-tv-green/20">
           <div className="text-tv-green font-bold mb-3 flex items-center gap-2">✅ Good Habits</div>
           <ul className="space-y-2 text-sm text-tv-text">
-            {['Disciplined morning sessions (calm + 7h+ sleep)', 'Following stop-losses 92% of the time', 'Journaling consistently — 7-day streak', 'Best on BTC breakouts — 80% win rate'].map(h=>(
+            {[
+              'High win rate when trading in a calm, well-rested state',
+              'Consistently respecting daily stop-loss limits',
+              'Maintaining a consistent daily journaling streak',
+              'Highly profitable when sticking to primary "A+" setups'
+            ].map(h=>(
               <li key={h} className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-tv-green flex-shrink-0"/>{h}</li>
             ))}
           </ul>
@@ -262,7 +267,12 @@ export default function Analytics() {
         <div className="card border-tv-red/20">
           <div className="text-tv-red font-bold mb-3 flex items-center gap-2">⚠️ Bad Habits</div>
           <ul className="space-y-2 text-sm text-tv-text">
-            {['Revenge trading after 2 consecutive losses', 'Overtrading after frustration (avg 4.2 trades vs 2.1)', 'Late-night trading — 29% win rate after 10 PM', 'Increasing lot size after wins (overconfidence)'].map(h=>(
+            {[
+              'Tendency to revenge trade after consecutive losses',
+              'Overtrading during periods of frustration or poor focus',
+              'Win rate drops significantly during late-night/fatigue sessions',
+              'Impulsively increasing risk size after a winning streak (overconfidence)'
+            ].map(h=>(
               <li key={h} className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-tv-red flex-shrink-0"/>{h}</li>
             ))}
           </ul>

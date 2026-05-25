@@ -44,8 +44,7 @@ export default function LoginPage() {
           entryChecklistRules: data.user.entryChecklistRules || [],
           isAdmin: data.user.isAdmin,
           status: data.user.status,
-        },
-        data.token
+        }
       );
       toast.success('Signed in with Google! 🚀');
       navigate('/app/dashboard');
@@ -79,8 +78,7 @@ export default function LoginPage() {
           entryChecklistRules: data.user.entryChecklistRules || [],
           isAdmin: data.user.isAdmin,
           status: data.user.status,
-        },
-        data.token
+        }
       );
 
       toast.success(mode === 'login' ? 'Welcome back! 🚀' : 'Account created successfully! ✨');
@@ -106,8 +104,7 @@ export default function LoginPage() {
         entryChecklistRules: ['Trend aligned', 'R:R > 2'],
         isAdmin: true,
         status: 'active'
-      },
-      'demo-token'
+      }
     );
     toast.success('Loaded demo account!');
     navigate('/app/dashboard');

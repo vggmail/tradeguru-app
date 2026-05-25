@@ -20,15 +20,46 @@ export default function BehaviorPage() {
   }, []);
 
   // Merge events: Preference to local live events, but show history from DB
-  const allEvents = [...(extensionEvents || [])];
+  let allEvents = [...(extensionEvents || [])];
   (dbEvents || []).forEach(dbE => {
     if (!allEvents.some(e => e.timestamp === dbE.timestamp && e.type === dbE.eventType)) {
       allEvents.push({ ...dbE, type: dbE.eventType });
     }
   });
 
+  const todayStr = new Date().toDateString();
+  
+  // Filter for today's records and normalize timestamp
+  allEvents = allEvents.filter(e => {
+    const ts = String(e.timestamp);
+    const d = new Date(ts.endsWith('Z') || ts.includes('T') ? ts : ts + 'Z');
+    return d.toDateString() === todayStr;
+  });
+
   // Sort by time
-  const sortedEvents = allEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  const sortedEvents = allEvents.sort((a, b) => {
+    const tsa = String(a.timestamp);
+    const tsb = String(b.timestamp);
+    const da = new Date(tsa.endsWith('Z') || tsa.includes('T') ? tsa : tsa + 'Z').getTime();
+    const db = new Date(tsb.endsWith('Z') || tsb.includes('T') ? tsb : tsb + 'Z').getTime();
+    return db - da;
+  });
+
+  // De-duplicate symbol views that occur within 1 minute
+  const deduplicatedEvents: any[] = [];
+  sortedEvents.forEach(e => {
+    if (e.type === 'symbol_view' || e.eventType === 'symbol_view') {
+      const currentTs = new Date(String(e.timestamp)).getTime();
+      const isDuplicate = deduplicatedEvents.some(d => 
+        (d.type === 'symbol_view' || d.eventType === 'symbol_view') && 
+        d.symbol === e.symbol && 
+        Math.abs(new Date(String(d.timestamp)).getTime() - currentTs) < 60000
+      );
+      if (!isDuplicate) deduplicatedEvents.push(e);
+    } else {
+      deduplicatedEvents.push(e);
+    }
+  });
 
   // Reset extension data handler
   const handleResetData = () => {
@@ -127,11 +158,13 @@ export default function BehaviorPage() {
   }
 
   // Compile timeline items
-  const timelineItems = sortedEvents
+  const timelineItems = deduplicatedEvents
     .filter(e => ['symbol_switch', 'compulsive_check', 'compulsive_refresh', 'late_night', 'symbol_view', 'hover_anxiety', 'analysis_paralysis', 'rule_broken'].includes(e.type))
     .slice(0, 50)
     .map(e => {
-      const timeStr = new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const ts = String(e.timestamp);
+      const d = new Date(ts.endsWith('Z') || ts.includes('T') ? ts : ts + 'Z');
+      const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const good = e.signal === 'calm' || e.signal === 'focused';
       return {
         time: timeStr,

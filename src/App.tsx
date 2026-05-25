@@ -59,7 +59,7 @@ export default function App() {
           callback: async (response: any) => {
             try {
               const { data } = await api.post('/api/auth/google', { credential: response.credential });
-              login(data.user, data.token);
+              login(data.user);
               window.location.href = '/app/dashboard';
             } catch (err) {
               console.error('Account selection failed', err);
