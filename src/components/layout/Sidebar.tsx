@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Brain, ClipboardList, TrendingUp,
-  BarChart2, Settings, LogOut, Activity, Zap, Moon, Sun, ShieldCheck
+  BarChart2, Settings, LogOut, Activity, Zap, Moon, Sun, ShieldCheck, Bell
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore } from '../../store/themeStore';
@@ -16,6 +16,7 @@ const NAV = [
   { to: '/app/analytics',  icon: BarChart2,        label: 'Analytics' },
   { to: '/app/behavior',   icon: Activity,         label: 'Behavior' },
   { to: '/app/tools',      icon: Zap,              label: 'Mental Tools' },
+  { to: '/app/notifications', icon: Bell,         label: 'Notifications' },
   { to: '/app/rules',      icon: ClipboardList,    label: 'My Rules' },
 ];
 

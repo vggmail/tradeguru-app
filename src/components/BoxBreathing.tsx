@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Square, Wind } from 'lucide-react';
+import { Play, Square, Wind, Heart } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 type Phase = 'inhale' | 'hold1' | 'exhale' | 'hold2';
@@ -22,6 +22,7 @@ export default function BoxBreathing() {
   const [isActive, setIsActive] = useState(false);
   const [phase, setPhase] = useState<Phase>('inhale');
   const [timeLeft, setTimeLeft] = useState(10);
+  const [round, setRound] = useState(1);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const phaseRef = useRef<Phase>(phase);
 
@@ -74,6 +75,7 @@ export default function BoxBreathing() {
         setTimeLeft((prev) => {
           if (prev <= 1) {
             setPhase((p) => {
+              if (p === 'hold2') setRound(r => r + 1);
               const next: Record<Phase, Phase> = {
                 inhale: 'hold1',
                 hold1: 'exhale',
@@ -97,6 +99,7 @@ export default function BoxBreathing() {
     if (!isActive) {
       setPhase('inhale');
       setTimeLeft(10);
+      setRound(1);
     }
   }, [isActive]);
 
@@ -137,25 +140,48 @@ export default function BoxBreathing() {
         >
           {isActive ? (
             <div className="text-center">
-              <div className="text-2xl font-bold text-tv-text animate-fade-in drop-shadow-lg">
+              <Heart 
+                className={cn(
+                  "w-12 h-12 mx-auto fill-current transition-all text-tv-red",
+                  phase === 'inhale' ? "scale-150 duration-[10000ms]" :
+                  phase === 'hold1' ? "scale-150 duration-1000" :
+                  phase === 'exhale' ? "scale-75 duration-[10000ms]" :
+                  "scale-75 duration-1000" // hold2
+                )} 
+              />
+              <div className="text-xl font-bold text-tv-text animate-fade-in drop-shadow-lg mt-4">
                 {PHASE_TEXT[phase]}
-              </div>
-              <div className="text-4xl font-mono mt-1 text-tv-blue drop-shadow-lg">
-                {timeLeft}
               </div>
             </div>
           ) : (
-            <div className="text-tv-muted font-medium text-sm">
+            <div className="text-tv-muted font-medium text-sm flex flex-col items-center">
+              <Heart className="w-8 h-8 text-tv-muted/50 mb-2" />
               Press Play
             </div>
           )}
         </div>
       </div>
 
+      {isActive && (
+        <div className="flex gap-8 items-center z-10 mb-4 bg-tv-surface2 p-4 rounded-xl border border-tv-border">
+          <div className="text-center">
+            <div className="text-tv-muted text-[10px] uppercase font-bold tracking-widest mb-1">Round</div>
+            <div className="text-3xl font-mono text-tv-text font-bold">{round}</div>
+          </div>
+          <div className="w-px h-10 bg-tv-border"></div>
+          <div className="text-center">
+            <div className="text-tv-muted text-[10px] uppercase font-bold tracking-widest mb-1">Seconds</div>
+            <div className={`text-3xl font-mono font-bold ${phase === 'inhale' || phase === 'hold1' ? 'text-tv-blue' : 'text-tv-green'}`}>
+              {timeLeft}
+            </div>
+          </div>
+        </div>
+      )}
+
       <button 
         onClick={toggleSession}
         className={cn(
-          "btn-primary w-48 justify-center gap-2 z-10 transition-colors",
+          "btn-primary w-48 justify-center gap-2 z-10 transition-colors mt-2",
           isActive ? "bg-tv-red hover:bg-tv-red/80 glow-red" : "glow-blue"
         )}
       >

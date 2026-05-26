@@ -15,6 +15,7 @@ import SettingsPage from './pages/SettingsPage';
 import MyRulesPage from './pages/MyRulesPage';
 import MentalTools from './pages/MentalTools';
 import SessionReview from './pages/SessionReview';
+import NotificationsPage from './pages/NotificationsPage';
 import { useAuthStore } from './store/authStore';
 import { useThemeStore } from './store/themeStore';
 import { useEffect, useRef } from 'react';
@@ -115,6 +116,7 @@ export default function App() {
             <Route path="analytics" element={<Analytics />} />
             <Route path="behavior" element={<BehaviorPage />} />
             <Route path="tools" element={<MentalTools />} />
+            <Route path="notifications" element={<NotificationsPage />} />
             <Route path="rules" element={<MyRulesPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
