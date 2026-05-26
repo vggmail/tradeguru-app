@@ -13,6 +13,7 @@ import Analytics from './pages/Analytics';
 import BehaviorPage from './pages/BehaviorPage';
 import SettingsPage from './pages/SettingsPage';
 import MyRulesPage from './pages/MyRulesPage';
+import MentalTools from './pages/MentalTools';
 import SessionReview from './pages/SessionReview';
 import { useAuthStore } from './store/authStore';
 import { useThemeStore } from './store/themeStore';
@@ -113,6 +114,7 @@ export default function App() {
             <Route path="journal/log" element={<LogTradePage />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="behavior" element={<BehaviorPage />} />
+            <Route path="tools" element={<MentalTools />} />
             <Route path="rules" element={<MyRulesPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
