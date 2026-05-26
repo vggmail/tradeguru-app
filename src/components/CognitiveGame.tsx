@@ -7,6 +7,7 @@ export default function CognitiveGame() {
   const [targetIndex, setTargetIndex] = useState<number | null>(null);
   const [targetColorClass, setTargetColorClass] = useState<string>('bg-tv-blue border-tv-blue glow-blue');
   const [score, setScore] = useState(0);
+  const [missCount, setMissCount] = useState(0);
   const [reactionTimes, setReactionTimes] = useState<number[]>([]);
   const [gameOver, setGameOver] = useState(false);
   const [countdown, setCountdown] = useState(0);
@@ -16,6 +17,7 @@ export default function CognitiveGame() {
 
   const startGame = () => {
     setScore(0);
+    setMissCount(0);
     setReactionTimes([]);
     setGameOver(false);
     setCountdown(3);
@@ -51,7 +53,7 @@ export default function CognitiveGame() {
   };
 
   const handleBoxClick = (index: number) => {
-    if (!isPlaying) return;
+    if (!isPlaying || targetIndex === null) return;
 
     if (index === targetIndex) {
       const reactionTime = Date.now() - startTimeRef.current;
@@ -69,8 +71,12 @@ export default function CognitiveGame() {
         setTimeout(() => nextRound(), 200 + Math.random() * 400);
       }
     } else {
-      // Miss click penalty (+500ms)
-      const newTimes = [...reactionTimes, 500]; // simulate slow reaction on miss
+      // Miss click penalty: Actual reaction time + 500ms penalty (min 1000ms)
+      const reactionTime = Date.now() - startTimeRef.current;
+      const penaltyTime = Math.max(reactionTime + 500, 1000); 
+      const newTimes = [...reactionTimes, penaltyTime];
+      
+      setMissCount(prev => prev + 1);
       setReactionTimes(newTimes);
       if (newTimes.length >= roundCount) {
         setIsPlaying(false);
@@ -90,14 +96,17 @@ export default function CognitiveGame() {
   let assessment = "";
   let colorClass = "";
   if (gameOver) {
-    if (avgReactionTime < 350) {
-      assessment = "Excellent Focus. You are sharp and ready to trade.";
+    if (missCount > 0) {
+      assessment = `Test Failed (${missCount} miss). Misses are not allowed. Lack of precision indicates impulsivity. Do not trade.`;
+      colorClass = "text-tv-red";
+    } else if (avgReactionTime < 450) {
+      assessment = "Excellent Focus. Perfect accuracy. You are sharp and ready to trade.";
       colorClass = "text-tv-green";
-    } else if (avgReactionTime < 500) {
+    } else if (avgReactionTime < 650) {
       assessment = "Moderate Readiness. Proceed with standard caution.";
       colorClass = "text-tv-blue";
     } else {
-      assessment = "Cognitive Fatigue Detected. Avoid trading right now.";
+      assessment = `Cognitive Fatigue. Reaction time (${avgReactionTime}ms) is too slow. Avoid trading right now.`;
       colorClass = "text-tv-red";
     }
   }
@@ -156,11 +165,18 @@ export default function CognitiveGame() {
         <div className="flex-1 flex flex-col items-center justify-center space-y-6 w-full max-w-sm animate-fade-in">
           <div className="bg-tv-surface2 p-6 rounded-xl border border-tv-border w-full text-center space-y-2">
             <div className="text-tv-muted text-sm uppercase tracking-wider font-bold">Average Reaction Time</div>
-            <div className={`text-4xl font-bold ${colorClass}`}>
+            <div className={`text-5xl font-bold ${colorClass}`}>
               {avgReactionTime} <span className="text-xl">ms</span>
             </div>
-            <div className="text-sm mt-3 pt-3 border-t border-tv-border text-tv-text font-medium flex items-center gap-2 justify-center">
-              {avgReactionTime >= 500 && <AlertTriangle className="w-4 h-4 text-tv-red" />}
+            
+            {missCount > 0 && (
+              <div className="text-tv-red font-bold text-sm mt-1">
+                Wrong Clicks: {missCount}
+              </div>
+            )}
+
+            <div className="text-sm mt-3 pt-3 border-t border-tv-border text-tv-text font-medium flex items-center gap-2 justify-center leading-relaxed">
+              {(avgReactionTime >= 500 || missCount > 0) && <AlertTriangle className="w-4 h-4 flex-shrink-0" style={{ color: colorClass === 'text-tv-red' ? '#ef5350' : '#eab308' }} />}
               {assessment}
             </div>
           </div>
