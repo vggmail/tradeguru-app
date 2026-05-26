@@ -15,6 +15,7 @@ const NAV = [
   { to: '/app/journal',    icon: TrendingUp,       label: 'Trade Journal' },
   { to: '/app/analytics',  icon: BarChart2,        label: 'Analytics' },
   { to: '/app/behavior',   icon: Activity,         label: 'Behavior' },
+  { to: '/app/rules',      icon: ClipboardList,    label: 'My Rules' },
 ];
 
 export default function Sidebar() {

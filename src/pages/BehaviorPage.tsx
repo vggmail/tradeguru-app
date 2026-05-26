@@ -66,8 +66,12 @@ export default function BehaviorPage() {
     window.postMessage({ source: 'tradeguru-web-app', type: 'RESET_EXTENSION_DATA' }, '*');
   };
 
+  // Compile timeline events
+  const timelineEvents = deduplicatedEvents
+    .filter(e => ['symbol_switch', 'compulsive_check', 'compulsive_refresh', 'late_night', 'symbol_view', 'hover_anxiety', 'analysis_paralysis', 'rule_broken'].includes(e.type));
+
   // Compile real events or fallback
-  const checksToday = extensionInstalled ? extensionStats.chartChecks : 63;
+  const checksToday = extensionInstalled ? timelineEvents.length : 63;
   const switchesToday = extensionInstalled ? extensionStats.symbolSwitches : 18;
   const lateNightEvents = (extensionEvents || []).filter(e => e.type === 'late_night');
   const lateNightCount = extensionInstalled ? lateNightEvents.length : 2;
@@ -130,9 +134,9 @@ export default function BehaviorPage() {
 
   // Process most monitored assets
   let monitoredAssets: { symbol: string; checks: number; pct: number; color: string }[] = [];
-  if (extensionInstalled && (allEvents || []).length > 0) {
+  if (extensionInstalled && (timelineEvents || []).length > 0) {
     const counts: Record<string, number> = {};
-    (allEvents || []).forEach(e => {
+    (timelineEvents || []).forEach(e => {
       if (e.symbol && e.symbol !== 'UNKNOWN' && e.symbol !== 'N/A') {
         counts[e.symbol] = (counts[e.symbol] || 0) + 1;
       }
@@ -158,8 +162,7 @@ export default function BehaviorPage() {
   }
 
   // Compile timeline items
-  const timelineItems = deduplicatedEvents
-    .filter(e => ['symbol_switch', 'compulsive_check', 'compulsive_refresh', 'late_night', 'symbol_view', 'hover_anxiety', 'analysis_paralysis', 'rule_broken'].includes(e.type))
+  const timelineItems = timelineEvents
     .slice(0, 50)
     .map(e => {
       const ts = String(e.timestamp);
