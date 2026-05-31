@@ -54,7 +54,54 @@ export default function AppLayout() {
             rawPayload: msg.payload
           });
           if (msg.payload) {
-            setExtensionData(msg.payload.events || [], msg.payload.stats || { chartChecks: 0, symbolSwitches: 0, postLossSpikes: 0 });
+            const previousLength = useAppStore.getState().extensionData?.length || 0;
+            const newEvents = msg.payload.events || [];
+            
+            // Log everything for debugging as requested by user
+            console.log('[TradeGuru Debug] Incoming Events:', newEvents);
+            
+            setExtensionData(newEvents, msg.payload.stats || { chartChecks: 0, symbolSwitches: 0, postLossSpikes: 0 });
+
+            // Ensure we don't process identical data twice if it's just a sync
+            if (newEvents.length > previousLength) {
+                const latestEvent = newEvents[newEvents.length - 1];
+                if (latestEvent && latestEvent.type === 'trade_checkin') {
+                    console.log('[TradeGuru Debug] Detected new trade checkin. Pushing to DB/Store:', latestEvent);
+                    const { addTrade } = useAppStore.getState();
+                    const metadata = latestEvent.metadata;
+                    if (metadata && metadata.trade) {
+                        try {
+                            const newTrade = {
+                                date: new Date().toISOString().split('T')[0],
+                                symbol: metadata.trade.symbol || 'UNKNOWN',
+                                direction: metadata.trade.side === 'LONG' || metadata.trade.side === 'BUY' ? 'long' : 'short',
+                                entry: 0, // Mock entry, can be updated later by user
+                                exit: 0,
+                                sl: 0,
+                                tp: 0,
+                                riskPct: 1,
+                                pnl: 0,
+                                timeframe: 'Live',
+                                setupType: 'Extension Handshake',
+                                emotionBefore: metadata.emotion || 'calm',
+                                emotionAfter: '',
+                                confidence: 7,
+                                followedPlan: metadata.rulesFollowed === 'Yes',
+                                isImpulsive: metadata.rulesFollowed === 'No',
+                                lesson: '',
+                                notes: `Caught by TradeGuru Extension: ${latestEvent.message}`,
+                                tags: ['extension']
+                            };
+                            
+                            // Important: Actually persist the trade!
+                            addTrade(newTrade as any); 
+                            toast.success('Live trade synced from broker!');
+                        } catch(e) {
+                            console.error('[TradeGuru Debug] Error mapping extension trade:', e);
+                        }
+                    }
+                }
+            }
           }
         } else if (msg.type === 'DATA_RESET' || msg.type === 'EXTENSION_DATA_RESET_CONFIRMED') {
           clearExtensionData();
