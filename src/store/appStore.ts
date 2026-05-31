@@ -41,6 +41,8 @@ export interface Trade {
   tags: string[];
   rulesChecked?: string[];
   rulesViolated?: string[];
+  platform?: string;
+  entryType?: string; // 'System Generated' | 'Customer Generated'
 }
 
 export interface SessionPlan {

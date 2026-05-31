@@ -113,6 +113,7 @@ export default function App() {
             <Route path="session/review" element={<SessionReview />} />
             <Route path="journal" element={<TradeJournal />} />
             <Route path="journal/log" element={<LogTradePage />} />
+            <Route path="journal/edit/:id" element={<LogTradePage />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="behavior" element={<BehaviorPage />} />
             <Route path="tools" element={<MentalTools />} />

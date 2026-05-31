@@ -61,38 +61,72 @@ export default function AppLayout() {
             console.log(`[TradeGuru Debug] TRACKING_UPDATE — ${newEvents.length} events`);
             setExtensionData(newEvents, msg.payload.stats || { chartChecks: 0, symbolSwitches: 0, postLossSpikes: 0 });
 
-            // Find any trade_checkin events not yet processed (track by event id)
-            newEvents
-              .filter((ev: any) => ev.type === 'trade_checkin' && ev.metadata?.trade)
-              .filter((ev: any) => !processedCheckinIds.has(ev.id))
-              .forEach((ev: any) => {
-                processedCheckinIds.add(ev.id);
-                console.log('[TradeGuru Debug] New trade_checkin — saving to DB:', ev);
-                const meta = ev.metadata;
-                const { addTrade } = useAppStore.getState();
-                addTrade({
-                  date: new Date().toISOString().split('T')[0],
-                  symbol: meta.trade.symbol || 'UNKNOWN',
-                  direction: (meta.trade.side === 'LONG' || meta.trade.side === 'BUY') ? 'long' : 'short',
-                  entry: 0,
-                  exit: 0,
-                  sl: 0,
-                  tp: 0,
-                  riskPct: 1,
-                  pnl: 0,
-                  timeframe: 'Live',
-                  setupType: 'Auto-Detected (Extension)',
-                  emotionBefore: meta.emotion || 'calm',
-                  emotionAfter: '',
-                  confidence: 7,
-                  followedPlan: meta.rulesFollowed === 'Yes',
-                  isImpulsive: meta.rulesFollowed === 'No',
-                  lesson: '',
-                  notes: `Auto-logged by TradeGuru Extension | Stress: ${meta.stress}/10`,
-                  tags: ['extension', 'auto-detected']
-                } as any);
-                toast.success(`📈 Trade auto-logged: ${meta.trade.side} ${meta.trade.symbol}`);
-              });
+            // ONLY auto-log trades for LIVE tracking updates (not historical data sync on refresh)
+            if (msg.type === 'TRACKING_UPDATE') {
+              newEvents
+                .filter((ev: any) => (ev.type === 'trade_checkin' || ev.type === 'trade_opened') && ev.metadata?.trade)
+                .filter((ev: any) => !processedCheckinIds.has(ev.id))
+                .forEach((ev: any) => {
+                  processedCheckinIds.add(ev.id);
+                  const meta = ev.metadata;
+                  const { addTrade } = useAppStore.getState();
+                  
+                  if (ev.type === 'trade_opened') {
+                    console.log('[TradeGuru Debug] OPEN Trade intercepted — saving to DB:', ev);
+                    addTrade({
+                      date: new Date().toISOString().split('T')[0],
+                      symbol: meta.trade.symbol || 'UNKNOWN',
+                      direction: (meta.trade.side === 'LONG' || meta.trade.side === 'BUY') ? 'long' : 'short',
+                      entry: meta.trade.price || -1,
+                      exit: -1,
+                      sl: 0,
+                      tp: 0,
+                      riskPct: 1,
+                      pnl: 0,
+                      timeframe: 'Live',
+                      setupType: 'Auto-Detected (Extension)',
+                      emotionBefore: 'calm',
+                      emotionAfter: '',
+                      confidence: 7,
+                      followedPlan: true,
+                      isImpulsive: false,
+                      lesson: '',
+                      notes: `Trade Opened automatically by TradeGuru Extension | Update prices manually.`,
+                      tags: ['extension', 'auto-detected', 'open'],
+                      platform: meta.trade?.platform || 'XM',
+                      entryType: 'System Generated'
+                    } as any);
+                    toast.success(`📈 Live Trade Opened: ${meta.trade.side} ${meta.trade.symbol}`);
+                  } 
+                  else if (ev.type === 'trade_checkin') {
+                    console.log('[TradeGuru Debug] CLOSE Trade Checkin — saving to DB:', ev);
+                    addTrade({
+                      date: new Date().toISOString().split('T')[0],
+                      symbol: meta.trade.symbol || 'UNKNOWN',
+                      direction: (meta.trade.side === 'LONG' || meta.trade.side === 'BUY') ? 'long' : 'short',
+                      entry: meta.trade.price || -1,
+                      exit: -1,
+                      sl: 0,
+                      tp: 0,
+                      riskPct: 1,
+                      pnl: 0,
+                      timeframe: 'Live',
+                      setupType: 'Auto-Detected (Extension)',
+                      emotionBefore: meta.emotion || 'calm',
+                      emotionAfter: '',
+                      confidence: 7,
+                      followedPlan: meta.rulesFollowed === 'Yes',
+                      isImpulsive: meta.rulesFollowed === 'No',
+                      lesson: '',
+                      notes: `Trade Closed Checkin | Stress: ${meta.stress}/10 | Update entry/exit prices manually.`,
+                      tags: ['extension', 'auto-detected', 'closed'],
+                      platform: meta.trade?.platform || 'XM',
+                      entryType: 'System Generated'
+                    } as any);
+                    toast.success(`✅ Trade Closed & Logged: ${meta.trade.side} ${meta.trade.symbol}`);
+                  }
+                });
+            }
           }
         } else if (msg.type === 'DATA_RESET' || msg.type === 'EXTENSION_DATA_RESET_CONFIRMED') {
           clearExtensionData();
