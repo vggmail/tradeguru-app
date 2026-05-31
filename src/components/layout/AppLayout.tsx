@@ -10,6 +10,9 @@ export default function AppLayout() {
   const { setExtensionInstalled, setExtensionData, clearExtensionData, fetchTrades, fetchCheckins, syncRules } = useAppStore();
   const fetchProfile = useAuthStore(s => s.fetchProfile);
 
+  // Track which checkin event IDs we've already saved — prevents double-saves on re-renders
+  const processedCheckinIds = new Set<string>();
+
   useEffect(() => {
     // Sync historical data from DB
     fetchProfile();
@@ -54,54 +57,42 @@ export default function AppLayout() {
             rawPayload: msg.payload
           });
           if (msg.payload) {
-            const previousLength = useAppStore.getState().extensionData?.length || 0;
-            const newEvents = msg.payload.events || [];
-            
-            // Log everything for debugging as requested by user
-            console.log('[TradeGuru Debug] Incoming Events:', newEvents);
-            
+            const newEvents: any[] = msg.payload.events || [];
+            console.log(`[TradeGuru Debug] TRACKING_UPDATE — ${newEvents.length} events`);
             setExtensionData(newEvents, msg.payload.stats || { chartChecks: 0, symbolSwitches: 0, postLossSpikes: 0 });
 
-            // Ensure we don't process identical data twice if it's just a sync
-            if (newEvents.length > previousLength) {
-                const latestEvent = newEvents[newEvents.length - 1];
-                if (latestEvent && latestEvent.type === 'trade_checkin') {
-                    console.log('[TradeGuru Debug] Detected new trade checkin. Pushing to DB/Store:', latestEvent);
-                    const { addTrade } = useAppStore.getState();
-                    const metadata = latestEvent.metadata;
-                    if (metadata && metadata.trade) {
-                        try {
-                            const newTrade = {
-                                date: new Date().toISOString().split('T')[0],
-                                symbol: metadata.trade.symbol || 'UNKNOWN',
-                                direction: metadata.trade.side === 'LONG' || metadata.trade.side === 'BUY' ? 'long' : 'short',
-                                entry: 0, // Mock entry, can be updated later by user
-                                exit: 0,
-                                sl: 0,
-                                tp: 0,
-                                riskPct: 1,
-                                pnl: 0,
-                                timeframe: 'Live',
-                                setupType: 'Extension Handshake',
-                                emotionBefore: metadata.emotion || 'calm',
-                                emotionAfter: '',
-                                confidence: 7,
-                                followedPlan: metadata.rulesFollowed === 'Yes',
-                                isImpulsive: metadata.rulesFollowed === 'No',
-                                lesson: '',
-                                notes: `Caught by TradeGuru Extension: ${latestEvent.message}`,
-                                tags: ['extension']
-                            };
-                            
-                            // Important: Actually persist the trade!
-                            addTrade(newTrade as any); 
-                            toast.success('Live trade synced from broker!');
-                        } catch(e) {
-                            console.error('[TradeGuru Debug] Error mapping extension trade:', e);
-                        }
-                    }
-                }
-            }
+            // Find any trade_checkin events not yet processed (track by event id)
+            newEvents
+              .filter((ev: any) => ev.type === 'trade_checkin' && ev.metadata?.trade)
+              .filter((ev: any) => !processedCheckinIds.has(ev.id))
+              .forEach((ev: any) => {
+                processedCheckinIds.add(ev.id);
+                console.log('[TradeGuru Debug] New trade_checkin — saving to DB:', ev);
+                const meta = ev.metadata;
+                const { addTrade } = useAppStore.getState();
+                addTrade({
+                  date: new Date().toISOString().split('T')[0],
+                  symbol: meta.trade.symbol || 'UNKNOWN',
+                  direction: (meta.trade.side === 'LONG' || meta.trade.side === 'BUY') ? 'long' : 'short',
+                  entry: 0,
+                  exit: 0,
+                  sl: 0,
+                  tp: 0,
+                  riskPct: 1,
+                  pnl: 0,
+                  timeframe: 'Live',
+                  setupType: 'Auto-Detected (Extension)',
+                  emotionBefore: meta.emotion || 'calm',
+                  emotionAfter: '',
+                  confidence: 7,
+                  followedPlan: meta.rulesFollowed === 'Yes',
+                  isImpulsive: meta.rulesFollowed === 'No',
+                  lesson: '',
+                  notes: `Auto-logged by TradeGuru Extension | Stress: ${meta.stress}/10`,
+                  tags: ['extension', 'auto-detected']
+                } as any);
+                toast.success(`📈 Trade auto-logged: ${meta.trade.side} ${meta.trade.symbol}`);
+              });
           }
         } else if (msg.type === 'DATA_RESET' || msg.type === 'EXTENSION_DATA_RESET_CONFIRMED') {
           clearExtensionData();
